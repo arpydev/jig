@@ -1,0 +1,6 @@
+---
+import Doc from "../layouts/Doc.astro";
+import { renderFile } from "../lib/content";
+const doc = renderFile("GLOSSARY.md");
+---
+<Doc doc={doc} source="GLOSSARY.md" title="Glossary" className="glossary" />

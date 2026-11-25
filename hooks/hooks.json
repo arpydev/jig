@@ -1,0 +1,56 @@
+{
+  "files": [
+    "context-guard.py",
+    "zsh-guard.py",
+    "git-guard.py",
+    "outbound-guard.py",
+    "docs-guard.py"
+  ],
+  "entries": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "command": "python3 {hooks}/zsh-guard.py",
+      "timeout": 10
+    },
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "command": "python3 -I {hooks}/git-guard.py",
+      "timeout": 10
+    },
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "command": "python3 -I {hooks}/outbound-guard.py",
+      "timeout": 10
+    },
+    {
+      "event": "PreToolUse",
+      "matcher": "mcp__plugin_atlassian_atlassian__.*",
+      "command": "python3 -I {hooks}/outbound-guard.py",
+      "timeout": 10
+    },
+    {
+      "event": "PreToolUse",
+      "matcher": "Write|Edit",
+      "command": "python3 -I {hooks}/docs-guard.py",
+      "timeout": 10
+    },
+    {
+      "event": "UserPromptSubmit",
+      "command": "printf %s '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"Skills check: before acting, scan the skills list for every skill that matches this request (and again when the task changes), load them and say in one line which you are using. Prefer local skills (~/.claude/skills and the repo .claude/skills, including local forks of plugin skills) over plugin skills; use a plugin skill only for what local skills do not cover or when a local skill says to load it. Local wins on conflict.\"}}'",
+      "timeout": 5
+    },
+    {
+      "event": "UserPromptSubmit",
+      "command": "python3 {hooks}/context-guard.py",
+      "timeout": 10
+    },
+    {
+      "event": "PostToolUse",
+      "command": "python3 {hooks}/context-guard.py",
+      "timeout": 10
+    }
+  ]
+}

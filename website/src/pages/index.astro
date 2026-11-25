@@ -1,0 +1,65 @@
+---
+import Base from "../layouts/Base.astro";
+import { skills, inlineHtml } from "../lib/content";
+import { GROUPS } from "../lib/groups";
+
+const byName = Object.fromEntries(skills().map((s) => [s.name, s]));
+---
+<Base title="Jig">
+  <section class="hero">
+    <h1>Jig</h1>
+    <p>A Claude Code workflow that takes work from an idea to a merged change, and gets better with every run. Scripts do the mechanical steps, a fresh grader scores every run, and the agent earns its autonomy.</p>
+  </section>
+
+  <section class="install" aria-labelledby="install">
+    <h2 id="install">Install</h2>
+    <ol>
+      <li>Clone it and see what the installer would do:
+        <pre><code>git clone https://github.com/arpydev/jig.git
+cd jig
+./install.sh --dry-run</code></pre>
+      </li>
+      <li>Install. Add <code>--pack &lt;folder&gt;</code> to install a skill pack as well.
+        <pre><code>./install.sh</code></pre>
+      </li>
+      <li>Start a new Claude Code session and run <code>/setup-workflow</code> in each repository.</li>
+    </ol>
+    <p class="note">The installer links skills, agents and hooks into <code>~/.claude</code>, is safe to rerun, and never deletes anything. Your own skills go in a <a href="/glossary/">pack</a>.</p>
+  </section>
+
+  <section class="pillars" aria-label="How it works">
+    <div class="pillar">
+      <h3>Scripts over prose</h3>
+      <p>A driver owns the order of each run, so the agent only does work that needs judgement. <a href="/decisions/#scripts-over-prose">Why</a></p>
+    </div>
+    <div class="pillar">
+      <h3>Graded by a stranger</h3>
+      <p>A fresh grader reads the transcript, diff and reviews, never the agent's own account. <a href="/decisions/#trust">Why</a></p>
+    </div>
+    <div class="pillar">
+      <h3>Autonomy is earned</h3>
+      <p>Every project starts with every checkpoint waiting for you. Good grades unlock more. <a href="/guide/#grading-and-autonomy">How</a></p>
+    </div>
+  </section>
+
+  <section id="skills">
+    {GROUPS.map((g, i) => (
+      <div class="group">
+        <div class="group-head">
+          <span class="group-num">{String(i + 1).padStart(2, "0")}</span>
+          <h2>{g.title}</h2>
+          <p>{g.intro}</p>
+          <a class="start" href={`/skills/${g.start}/`}>Start with /{g.start}</a>
+        </div>
+        <div class="cards">
+          {g.skills.map((name) => (
+            <a class="card" href={`/skills/${name}/`}>
+              <code>/{name}</code>
+              <span set:html={inlineHtml(byName[name].summary)} />
+            </a>
+          ))}
+        </div>
+      </div>
+    ))}
+  </section>
+</Base>

@@ -1,0 +1,46 @@
+---
+import "../styles/site.css";
+import { REPO_URL } from "../lib/content";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = "A Claude Code workflow that takes work from an idea to a merged change, and gets better with every run." } = Astro.props;
+const path = Astro.url.pathname;
+const nav = [
+  { href: "/#skills", label: "Skills", active: path.startsWith("/skills/") },
+  { href: "/guide/", label: "Guide", active: path.startsWith("/guide/") },
+  { href: "/glossary/", label: "Glossary", active: path.startsWith("/glossary/") },
+  { href: "/decisions/", label: "Decisions", active: path.startsWith("/decisions/") },
+];
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title === "Jig" ? "Jig: a Claude Code workflow" : `${title} · Jig`}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">⌗</span>Jig</a>
+        <nav aria-label="Main">
+          {nav.map((n) => <a href={n.href} aria-current={n.active ? "page" : undefined}>{n.label}</a>)}
+          <a href={REPO_URL}>GitHub</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        Jig is MIT licensed. Many skills are forked from Matt Pocock's <a href="https://github.com/mattpocock/skills">mattpocock/skills</a>; see the <a href="/guide/#credits">credits</a>.
+      </div>
+    </footer>
+  </body>
+</html>

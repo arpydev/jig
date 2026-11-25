@@ -1,0 +1,16 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import { skills, type Skill } from "../../lib/content";
+
+export function getStaticPaths() {
+  return skills().map((skill) => ({ params: { name: skill.name }, props: { skill } }));
+}
+const { skill } = Astro.props as { skill: Skill };
+---
+<Doc
+  doc={skill.body}
+  source={`skills/${skill.name}/SKILL.md`}
+  eyebrow={skill.group}
+  title={`/${skill.name}`}
+  lede={skill.summary}
+/>

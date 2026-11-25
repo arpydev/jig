@@ -1,0 +1,6 @@
+---
+import Doc from "../layouts/Doc.astro";
+import { renderFile } from "../lib/content";
+const doc = renderFile("docs/guide.md");
+---
+<Doc doc={doc} source="docs/guide.md" title="Guide" lede="How the workflow runs, how to set a repository up, and how runs are graded." />

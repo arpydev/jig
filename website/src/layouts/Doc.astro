@@ -1,0 +1,33 @@
+---
+import Base from "./Base.astro";
+import type { Rendered } from "../lib/content";
+import { REPO_URL, inlineHtml } from "../lib/content";
+
+interface Props {
+  doc: Rendered;
+  source: string;
+  lede?: string;
+  eyebrow?: string;
+  title?: string;
+  className?: string;
+}
+const { doc, source, lede, eyebrow, title = doc.title, className = "" } = Astro.props;
+const toc = doc.headings.length > 2;
+---
+<Base title={title} description={lede?.replace(/`/g, "")}>
+  <div class:list={["doc", { "no-toc": !toc }]}>
+    <article>
+      {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+      <h1 class="page-title">{title}</h1>
+      {lede && <p class="lede" set:html={inlineHtml(lede)} />}
+      <div class:list={["prose", className]} set:html={doc.html} />
+      <p class="source-link"><a href={`${REPO_URL}/blob/main/${source}`}>View {source} on GitHub</a></p>
+    </article>
+    {toc && (
+      <aside class="toc" aria-label="On this page">
+        <strong>On this page</strong>
+        {doc.headings.map((h) => <a href={`#${h.id}`}>{h.text}</a>)}
+      </aside>
+    )}
+  </div>
+</Base>
