@@ -2,6 +2,7 @@
 """Merge hook entries from hooks.json files into Claude Code's settings.json.
 
 Usage: hooks.py [--home <claude home>] [--dry-run] <hooks.json>...
+       hooks.py [--home <claude home>] [--dry-run] --remove-all
 
 Each hooks.json (the core's, and one per pack) has "files" (the hook scripts install.sh links
 into <home>/hooks/) and "entries": {event, matcher (optional), command, timeout}. "{hooks}" in a
@@ -11,6 +12,7 @@ Safe to rerun. An entry already in settings.json (same event, matcher and comman
 alone. Entries it wrote are recorded in <home>/workflow-hooks.json with the hooks.json they came
 from; an entry it wrote that its hooks.json no longer lists is removed. Entries it didn't write
 are never touched, and neither are entries from a hooks.json not named in this run.
+--remove-all removes every entry it wrote, whichever hooks.json it came from (uninstall.sh).
 """
 import json
 import os
@@ -97,6 +99,7 @@ def merge(settings, record, sources, entries):
 def main(argv):
     home = os.environ.get("CLAUDE_HOME") or os.path.expanduser("~/.claude")
     dry = False
+    remove_all = False
     sources = []
     i = 0
     while i < len(argv):
@@ -106,16 +109,21 @@ def main(argv):
             continue
         if argv[i] == "--dry-run":
             dry = True
+        elif argv[i] == "--remove-all":
+            remove_all = True
         else:
             sources.append(os.path.realpath(argv[i]))
         i += 1
-    if not sources:
+    if not sources and not remove_all:
         print(__doc__, file=sys.stderr)
         return 2
     settings_path = os.path.join(home, "settings.json")
     record_path = os.path.join(home, RECORD)
     settings = read_json(settings_path, {})
-    record, lines = merge(settings, read_json(record_path, []), sources, wanted(sources, home))
+    old = read_json(record_path, [])
+    if remove_all:
+        sources = sorted({r["source"] for r in old})
+    record, lines = merge(settings, old, sources, [] if remove_all else wanted(sources, home))
     for line in lines:
         print(("would be " + line) if dry and not line.startswith("ok") else line)
     if not dry:

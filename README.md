@@ -20,6 +20,8 @@ cd jig
 
 Add `--pack <folder>` to both commands to install a skill pack as well. `install.sh` links the skills, agents and hooks into `~/.claude`, registers the hooks in `settings.json`, adds an import of `preferences.md` to `~/.claude/CLAUDE.md`, and is safe to rerun. Start a new Claude Code session afterwards, then run `/setup-workflow` in each repository.
 
+To remove it, run `./uninstall.sh --dry-run`, then `./uninstall.sh`. It removes only what `install.sh` added: links into the core or an installed pack, the hook entries it recorded, the `preferences.md` import and its record files. Backups and each repository's own files stay.
+
 ## Scripts
 
 Each script answers one question on demand, so skills don't keep the answer in prose. The opening comment of each script gives its usage.
@@ -27,6 +29,7 @@ Each script answers one question on demand, so skills don't keep the answer in p
 | Script | Question it answers |
 |---|---|
 | `install.sh` | Are the core's and each pack's skills, agents and hooks linked into `~/.claude`? |
+| `uninstall.sh` | What did `install.sh` add to `~/.claude`, and can it be removed? |
 | `scripts/hooks.py` | Are the hook entries from each `hooks/hooks.json` in `settings.json`? |
 | `scripts/skill_refs.py` | Does every skill name only scripts, files and skills that exist? |
 | `scripts/no_regression.py` | Did moving skills between the core and a pack lose any line? |

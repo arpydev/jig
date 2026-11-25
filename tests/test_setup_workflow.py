@@ -352,6 +352,78 @@ class InstallTest(unittest.TestCase):
             self.assertEqual(f.read(), f"@{CORE}/preferences.md\n# Mine\n")
 
 
+class UninstallTest(unittest.TestCase):
+    setUp = InstallTest.setUp
+    tearDown = InstallTest.tearDown
+    install = InstallTest.install
+    pack_hooks = InstallTest.pack_hooks
+
+    def uninstall(self, *args):
+        return run("bash", os.path.join(CORE, "uninstall.sh"), *args, env=self.env)
+
+    def test_removes_core_and_pack_links_and_keeps_your_own(self):
+        mine = os.path.join(self.home, "skills", "mine")
+        os.makedirs(mine)
+        self.install("--owner", "no")
+        r = self.uninstall()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        for name in ("setup-workflow", "pack-skill"):
+            self.assertFalse(os.path.lexists(os.path.join(self.home, "skills", name)))
+        self.assertFalse(os.path.lexists(os.path.join(self.home, "agents", "pack-worker.md")))
+        self.assertFalse(os.path.lexists(os.path.join(self.home, "hooks", "git-guard.py")))
+        self.assertTrue(os.path.isdir(mine))
+
+    def test_removes_its_hook_entries_and_keeps_your_own(self):
+        self.pack_hooks()
+        os.makedirs(self.home)
+        mine = {"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "my-hook"}]}]},
+                "model": "opus"}
+        with open(os.path.join(self.home, "settings.json"), "w") as f:
+            json.dump(mine, f)
+        self.install("--owner", "no")
+        r = self.uninstall()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        with open(os.path.join(self.home, "settings.json")) as f:
+            self.assertEqual(json.load(f), mine)
+
+    def test_removes_the_import_and_its_records_and_keeps_the_rest_of_claude_md(self):
+        os.makedirs(self.home)
+        with open(os.path.join(self.home, "CLAUDE.md"), "w") as f:
+            f.write("# Mine\n")
+        self.install("--owner", "no")
+        r = self.uninstall()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        with open(os.path.join(self.home, "CLAUDE.md")) as f:
+            self.assertEqual(f.read(), "# Mine\n")
+        for name in ("workflow-core.json", "workflow-packs", "workflow-hooks.json"):
+            self.assertFalse(os.path.exists(os.path.join(self.home, name)), name)
+
+    def test_dry_run_changes_nothing(self):
+        self.pack_hooks()
+        self.install("--owner", "no")
+
+        def snapshot():
+            out = {}
+            for root, dirs, files in os.walk(self.home):
+                for n in dirs + files:
+                    p = os.path.join(root, n)
+                    out[p] = os.readlink(p) if os.path.islink(p) else (open(p).read() if os.path.isfile(p) else None)
+            return out
+
+        before = snapshot()
+        r = self.uninstall("--dry-run")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("would remove", r.stdout)
+        self.assertEqual(snapshot(), before)
+
+    def test_backups_are_kept_and_reported(self):
+        os.makedirs(os.path.join(self.home, "skills", "pack-skill"))
+        self.install("--backup", "--owner", "no")
+        r = self.uninstall()
+        self.assertTrue(os.path.isdir(os.path.join(self.home, "skills-backup", "pack-skill")))
+        self.assertIn("skills-backup", r.stdout)
+
+
 def unattributed(skills_dir):
     """Skills with an upstream/ folder whose own files never name Matt Pocock's licence."""
     out = []

@@ -58,10 +58,11 @@ cd jig
     <p class="note">The installer changes these files in <code>~/.claude</code>:</p>
     <ul class="note">
       <li>It links Jig's skills, agents and hooks into <code>skills/</code>, <code>agents/</code> and <code>hooks/</code>.</li>
-      <li>It adds five hooks to <code>settings.json</code>. They suggest a fresh session when the context gets large, block shell commands that zsh misreads, block force pushes without <code>--force-with-lease</code>, ask you before anything is posted to GitHub, Jira or Confluence, and keep the glossary and ADRs where the project keeps them.</li>
+      <li>It adds hooks to <code>settings.json</code>. One reminds Claude to check its skills list on every prompt. The others suggest a fresh session when the context gets large, block shell commands that zsh misreads, block force pushes without <code>--force-with-lease</code>, ask you before anything is posted to GitHub, Jira or Confluence, and keep the glossary and ADRs where the project keeps them.</li>
       <li>It adds a line to <code>CLAUDE.md</code> that imports Jig's <a href="https://github.com/arpydev/jig/blob/main/preferences.md">preferences</a>.</li>
     </ul>
     <p class="note">It is safe to rerun and never deletes anything. If a file is already in the way, it reports a conflict and leaves the file alone.</p>
+    <p class="note">To remove Jig, run <code>./uninstall.sh --dry-run</code> to see what it would remove, then <code>./uninstall.sh</code>. It removes only what the installer added and leaves your own skills, settings and repositories alone.</p>
   </section>
 
   <section class="pillars" aria-label="Principles">
