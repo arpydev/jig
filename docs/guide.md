@@ -98,6 +98,7 @@ The steps are `grill`, `domain`, `design`, `spec`, `tickets`, `plan`, `build`, `
 | `domain-modeling` | Challenge terms against the glossary, settle vague words, check claims against the code, and write ADRs only for decisions that are hard to reverse, surprising and a real trade-off. |
 | `codebase-design` | Use one vocabulary for design (module, interface, depth, seam, adapter, leverage, locality), keep code and infrastructure simple to change, and let the code explain itself. |
 | `improve-codebase-architecture` | Scan a repository or an area for deepening opportunities, see them as an HTML report, and grill through the one you pick. |
+| `comment-report` | Sort every comment in a repository or folder into Tautology, Excuse, Stale or Decision Record, and report what should replace each. It never edits. Based on a prompt Matt Pocock posted. |
 | `implement` | Build one piece of work from a spec or tickets. |
 | `implement-spec` | Build a whole spec: implementer subagents work its tickets in parallel worktrees, driven by `drive.py`, and a merger joins them on an integration branch. |
 | `review-change` | Review the changes since a ref along three axes (Standards, Spec and Correctness) in parallel fresh subagents. |

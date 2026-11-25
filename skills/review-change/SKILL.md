@@ -60,6 +60,12 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
+The baseline also carries three checks for writing only what is useful. Like the smells, a documented repo standard overrides them:
+
+- **Comment the code could carry**: a new or edited comment that repeats the code, excuses a hack, has gone stale, or explains what rather than why. → rename, extract a named function or constant, narrow a type, or write a test whose name states the rule; a reason the code can't show stays as one line starting `why:` (`codebase-design`, "Code that explains itself").
+- **Tautological test**: an assertion that recomputes the expected value the way the code does (`expect(add(a, b)).toBe(a + b)`), or a test that would still pass if the behaviour it names were broken. → take the expected value from an independent source: a known literal, a worked example, the spec (`tdd`, "Anti-patterns").
+- **Nobody asked for it**: code, files, docs, config or tests the spec or ticket doesn't need, such as a helper for one caller, a README for a script, a test of a framework's own behaviour. → delete it.
+
 ### 4. Spawn the three sub-agents in parallel
 
 Issue all three sub-agent calls together, in the foreground, and aggregate the reports they return. Use the agent `settings.py get workerAgent` names, or the core's `worker` when it isn't set. Each sub-agent's model comes from `settings.py model <role>`, with the roles `standardsReviewer`, `specReviewer` and `correctnessReviewer`; when it prints `session`, leave the model unset. The core defaults are Sonnet for Standards and Spec, to keep reviews within the plan's usage limits, and Opus for Correctness, which needs the judgement. If the Spec review starts missing behaviour the developer later catches, raise that before changing its model.
@@ -70,7 +76,7 @@ Give no sub-agent the plan, the conversation, your own findings or your view of 
 
 - The full diff command and commit list.
 - The list of standards-source files you found in step 3 (the skills' `SKILL.md` files among them), **plus the smell baseline from step 3** pasted in full (the sub-agent has no other access to it).
-- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
+- The brief: "Report, per file/hunk where relevant, (a) every place the diff violates a documented standard: cite the standard (file + the rule); and (b) any baseline smell or usefulness check you spot: name it and quote the hunk. Distinguish hard violations from judgement calls: documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words."
 
 **Spec sub-agent prompt** should include:
 

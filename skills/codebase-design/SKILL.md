@@ -134,7 +134,7 @@ Every doc and comment has to be loaded into context and can drift out of date. N
 
 - **Readers should get their answers from the code.** Names, types and tests carry the meaning. Before writing a comment or a doc, try these first: rename, extract a named function or constant, narrow a type (a union of statuses rather than a string), or write a test whose name states the rule.
 - **A comment that explains which of two behaviours applies usually means the decision hasn't been made.** Make the decision and put it in the code.
-- **A comment is fine only for a reason the code can't show.** Examples are a quirk of an external system, a regulatory rule, or a deliberate choice that looks wrong. Keep it to one line saying why, not what. If a test can prove that reason, use the test instead.
+- **A comment is fine only for a reason the code can't show.** Examples are a quirk of an external system, a regulatory rule, or a deliberate choice that looks wrong. Keep it to one line that starts `why:` and says why, not what; the comment ratchet counts every other comment. If a test can prove that reason, use the test instead.
 - **Don't write docs that repeat the code.** If the code can prove what a doc says, generate the doc with a script or replace it with a check.
 - **Remove stale or redundant comments in the code you touch, in the same change.**
 
@@ -152,5 +152,6 @@ Taken 2026-11-23 from github.com/mattpocock/skills at commit abeeaf9 (`skills/en
 | 2026-11-23 | "The repo's own patterns win" section; the repo's agreed ports are exempt from the one-adapter rule (named in the `design` step addition) | A repo's agreed patterns would otherwise be flagged everywhere | Local only |
 | 2026-11-23 | "Simple and easy to change" section, covering infrastructure as well as code | The developer wants tight infra and code that works with the smallest change and can still grow; unneeded fields and indexes had crept into planned work | Propose upstream |
 | 2026-11-24 | "Code that explains itself" section | The developer wants answers readable from the code, not from docs or comments, so less is loaded into context and nothing drifts; a comment often means a decision wasn't made | Propose upstream |
+| 2026-11-25 | A kept comment starts `why:` | The comment ratchet and `comment-report` need a mark to tell a reason from any other comment | Local only |
 | 2026-11-23 | Description names the retro architecture check | So the skill loads from the retro | Local only |
 | 2026-11-24 | A project's ports detail and examples moved to a pack's `design` step addition | The core holds no company facts | Local only |

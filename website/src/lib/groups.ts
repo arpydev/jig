@@ -34,7 +34,7 @@ export const GROUPS: Group[] = [
     title: "Engineering",
     intro: "Keep the codebase and the issue list healthy.",
     start: "improve-codebase-architecture",
-    skills: ["improve-codebase-architecture", "diagnosing-bugs", "triage", "handoff"],
+    skills: ["improve-codebase-architecture", "comment-report", "diagnosing-bugs", "triage", "handoff"],
   },
   {
     title: "Reference",

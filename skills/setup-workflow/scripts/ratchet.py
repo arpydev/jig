@@ -14,18 +14,35 @@ Usage (from anywhere inside the repository):
   ratchet.py list      print each rule, its total and its reason
   ratchet.py install <repo> [--to scripts/ratchet.py]
                        copy this script into a repository, so its checks and CI can run it
+  ratchet.py comments [path...]
+                       print `path:line` for each comment line in tracked Python, shell, Ruby,
+                       TypeScript, JavaScript and C-family files: the starter rule's command.
+                       Skips `why:` comments, shebangs, a licence header, tool directives
+                       (eslint-disable, noqa, @ts-expect-error...), docstrings, and generated
+                       or minified files
 
 Standard library only. The core's copy (setup-workflow/scripts/ratchet.py) is the master;
 `settings.py check` fails when a project's copy (the `ratchet` setting) differs from it.
 """
 import argparse
+import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+import tokenize
 
 FOLDER = ".ratchet"
+HASH = {".py", ".sh", ".bash", ".zsh", ".rb"}
+SLASH = {".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".go", ".java", ".kt", ".cs",
+         ".swift", ".rs", ".c", ".h", ".cc", ".cpp", ".hpp"}
+GENERATED = re.compile(r"@generated|do not edit|auto-?generated", re.I)
+LICENCE = re.compile(r"copyright|licen[cs]e|spdx-license", re.I)
+DIRECTIVE = re.compile(r"(eslint|prettier|biome|stylelint|jshint|istanbul|c8|nolint|pylint|pyright|mypy|isort|fmt|"
+                       r"shellcheck|rubocop|swiftlint)\b|@ts-|noqa|type:\s*ignore|pragma|go:|nosec|nosonar|"
+                       r"<reference|#?(end)?region\b|-\*-|frozen_string_literal|webpack|@vite-ignore", re.I)
 
 
 def fail(msg):
@@ -124,6 +141,112 @@ def lower(top):
         print(f"{rule['rule']}: {sum(rule['baseline'].values())}" + (" (lowered)" if down else ""))
 
 
+def hash_comments(text, python):
+    if python:
+        try:
+            out, code = [], set()
+            for t in tokenize.generate_tokens(io.StringIO(text).readline):
+                if t.type == tokenize.COMMENT:
+                    out.append((t.start[0], t.string[1:]))
+                elif t.type not in (tokenize.NL, tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT,
+                                    tokenize.ENDMARKER):
+                    code.update(range(t.start[0], t.end[0] + 1))
+            return out, code
+        except (tokenize.TokenError, SyntaxError, IndentationError):
+            pass
+    out, code = [], set()
+    for n, line in enumerate(text.splitlines(), 1):
+        quote, i = None, 0
+        while i < len(line):
+            c = line[i]
+            if quote:
+                if c == "\\" and quote == '"':
+                    i += 1
+                elif c == quote:
+                    quote = None
+            elif c in "'\"":
+                quote = c
+            elif c == "#" and (i == 0 or line[i - 1].isspace()):
+                out.append((n, line[i + 1:]))
+                break
+            i += 1
+        if line[:i].strip():
+            code.add(n)
+    return out, code
+
+
+def slash_comments(text):
+    out, code, state = [], set(), None
+    for n, line in enumerate(text.splitlines(), 1):
+        if state in ("'", '"'):
+            state = None
+        note = line if state == "block" else None
+        i = 0
+        while i < len(line):
+            c, two = line[i], line[i:i + 2]
+            if state == "block":
+                if two == "*/":
+                    state, i = None, i + 2
+                    continue
+            elif state:
+                code.add(n)
+                if c == "\\":
+                    i += 1
+                elif c == state:
+                    state = None
+            elif two == "//":
+                note = line[i + 2:] if note is None else note
+                break
+            elif two == "/*":
+                note = line[i + 2:] if note is None else note
+                state, i = "block", i + 2
+                continue
+            elif not c.isspace():
+                code.add(n)
+                if c in "'\"`":
+                    state = c
+            i += 1
+        if note is not None:
+            out.append((n, note.replace("*/", "")))
+    return out, code
+
+
+def file_comments(path):
+    ext = os.path.splitext(path)[1]
+    if ext not in HASH | SLASH or path.endswith(".min.js"):
+        return []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    except (OSError, UnicodeDecodeError):
+        return []
+    if GENERATED.search("\n".join(text.splitlines()[:5])):
+        return []
+    found, code = hash_comments(text, ext == ".py") if ext in HASH else slash_comments(text)
+    first_code = min(code, default=float("inf"))
+    header = [t for n, t in found if n < first_code]
+    keep = []
+    for n, t in found:
+        body = t.strip().lstrip("/*! ").strip()
+        if n == 1 and t.startswith("!"):
+            continue
+        if n < first_code and any(LICENCE.search(h) for h in header):
+            continue
+        if not body or body.lower().startswith("why:") or DIRECTIVE.match(body):
+            continue
+        keep.append(n)
+    return keep
+
+
+def comments(paths):
+    r = subprocess.run(["git", "ls-files", "-z", "--", *paths], capture_output=True, text=True)
+    if r.returncode:
+        fail(r.stderr.strip() or "git ls-files failed")
+    for path in filter(None, r.stdout.split("\0")):
+        for n in file_comments(path):
+            print(f"{path}:{n}")
+
+
 def install(repo, to):
     dest = os.path.join(repo, to)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
@@ -144,9 +267,14 @@ def main(argv):
     i = sub.add_parser("install")
     i.add_argument("repo")
     i.add_argument("--to", default=os.path.join("scripts", "ratchet.py"))
+    c = sub.add_parser("comments")
+    c.add_argument("paths", nargs="*")
     args = p.parse_args(argv)
     if args.cmd == "install":
         install(args.repo, args.to)
+        return
+    if args.cmd == "comments":
+        comments(args.paths)
         return
     top = root()
     if args.cmd == "add":

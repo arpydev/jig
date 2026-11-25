@@ -24,4 +24,5 @@ For each changed file, ask:
 ## Tests
 
 - A behaviour the change adds or relies on that no test would catch if it broke.
-- A test that would pass whatever the code did: it describes the code rather than guarding it.
+- A tautological test: an assertion that recomputes the expected value the way the code does, or a test that would still pass if the behaviour it names were broken. Break the behaviour in your head and check the test would go red.
+- A test, file or code path the change adds that nothing in the spec or ticket needs.
