@@ -32,7 +32,7 @@ Steps 3 and 4 run spec to PR: implementer subagents work the tickets in their ow
 
 ## Install
 
-You need Claude Code, git and Python 3. The GitHub CLI (`gh`) is needed only if your tickets are GitHub issues.
+You need macOS, Linux or WSL on Windows, with Claude Code, git and Python 3. Native Windows is not supported: the scripts need bash, real symlinks and `python3`. With WSL, run Claude Code inside WSL too, so `~/.claude` is the Linux one. The GitHub CLI (`gh`) is needed only if your tickets are GitHub issues.
 
 ```bash
 git clone https://github.com/arpydev/jig.git

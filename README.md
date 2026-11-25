@@ -11,6 +11,8 @@ Start with the [user guide](docs/guide.md), or read it alongside every skill on 
 
 ## Install
 
+You need macOS, Linux or WSL on Windows, with Claude Code, git and Python 3. Native Windows is not supported.
+
 ```bash
 git clone https://github.com/arpydev/jig.git
 cd jig
