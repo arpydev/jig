@@ -29,13 +29,23 @@ const nav = [
     <header class="site-header">
       <div class="wrap header-inner">
         <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">⌗</span>Jig</a>
-        <nav aria-label="Main">
+        <nav id="site-nav" aria-label="Main" popover>
           {nav.map((n) => <a href={n.href} aria-current={n.active ? "page" : undefined}>{n.label}</a>)}
           <a href={REPO_URL}>GitHub</a>
         </nav>
         <Search />
+        <button type="button" class="menu-button" popovertarget="site-nav" aria-label="Menu">
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        </button>
       </div>
     </header>
+    <script>
+      // On small screens the nav is a side drawer; a link to the same page leaves it open otherwise.
+      const siteNav = document.getElementById("site-nav")!;
+      siteNav.addEventListener("click", (e) => {
+        if ((e.target as HTMLElement).closest("a") && siteNav.matches(":popover-open")) siteNav.hidePopover();
+      });
+    </script>
     <main class="wrap">
       <slot />
     </main>
