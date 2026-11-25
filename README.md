@@ -2,7 +2,7 @@
 
 A generic Claude Code workflow core: skills, agents, scripts and hooks that take work from an idea to a merged change on any project. It holds no organisation's facts. Your own skills and rules go in a skill pack (see **Pack** in [GLOSSARY.md](GLOSSARY.md)).
 
-Start with the [user guide](docs/guide.md).
+Start with the [user guide](docs/guide.md), or read it alongside every skill on the website: [jig-neon.vercel.app](https://jig-neon.vercel.app/).
 
 ## Principles
 
