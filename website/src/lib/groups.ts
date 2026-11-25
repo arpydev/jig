@@ -5,9 +5,9 @@ export type Group = { title: string; intro: string; start: string; skills: strin
 export const GROUPS: Group[] = [
   {
     title: "Getting started",
-    intro: "Run once in each repository.",
+    intro: "Run once in each repository, and learn the workflow.",
     start: "setup-workflow",
-    skills: ["setup-workflow"],
+    skills: ["setup-workflow", "teach"],
   },
   {
     title: "The main flow",

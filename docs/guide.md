@@ -13,7 +13,7 @@ Jig is a set of Claude Code skills, scripts and agents for taking work from an i
 
 This workflow stands on other people's work. Each borrowed skill keeps its licence and, where it was taken straight from upstream, an `upstream/` folder with that version, so changes from upstream are easy to carry in.
 
-- **Matt Pocock**, [mattpocock/skills](https://github.com/mattpocock/skills) (MIT). The thinking half of the workflow is his: the grill (`grilling`, `grill-me`, `grill-with-docs`), `domain-modeling`, `codebase-design` and `improve-codebase-architecture`, the `to-spec` and `to-tickets` steps, `implement`, `implement-spec` and `review-change`, and `tdd`, `diagnosing-bugs`, `prototype`, `triage`, `handoff`, `writing-for-agents` and `research`. `setup-workflow` grew out of his `setup-matt-pocock-skills`. His licence is in [LICENSE-mattpocock-skills](../LICENSE-mattpocock-skills).
+- **Matt Pocock**, [mattpocock/skills](https://github.com/mattpocock/skills) (MIT). The thinking half of the workflow is his: the grill (`grilling`, `grill-me`, `grill-with-docs`), `domain-modeling`, `codebase-design` and `improve-codebase-architecture`, the `to-spec` and `to-tickets` steps, `implement`, `implement-spec` and `review-change`, and `tdd`, `diagnosing-bugs`, `prototype`, `triage`, `handoff`, `writing-for-agents`, `research` and `teach`. `setup-workflow` grew out of his `setup-matt-pocock-skills`. His licence is in [LICENSE-mattpocock-skills](../LICENSE-mattpocock-skills).
 - **Lauren Tan**, [pstack](https://github.com/cursor/plugins/tree/main/pstack) in cursor/plugins (MIT). The doing half follows her approach: scripts drive the mechanical steps so the agent only does what needs judgement. Two of her principles are the core's own ("build the lever" and "encode lessons in structure"), and the verification skill and the worker status (`PASS`, `ISSUES` or `BLOCKED`) come from pstack.
 - **Jesse Vincent and Prime Radiant**, [Superpowers](https://github.com/obra/superpowers) (MIT). Superpowers gave the idea of building a workflow of my own as a set of skills. Nothing specific is taken from it.
 
@@ -98,6 +98,7 @@ The steps are `grill`, `domain`, `design`, `spec`, `tickets`, `plan`, `build`, `
 | `grade-run` | Grade a run with a fresh grader and record it in the ledger. |
 | `to-spec` | Turn the grilled conversation into a spec: each decision with its why and the alternative weighed, what was checked and needs nothing, and the test data needed. |
 | `to-tickets` | Split a spec, plan or epic into tickets that can run in parallel, with blocking edges, a test per acceptance criterion and the folders each is likely to touch. |
+| `teach` | Learn a topic, a codebase or Jig itself over several sessions. Claude keeps what you know in `~/.claude/teach/<topic>/`, out of every repository, and teaches Jig from its own docs. |
 | `tdd`, `diagnosing-bugs`, `prototype`, `triage`, `handoff`, `writing-for-agents`, `research` | Matt Pocock's skills, as he wrote them apart from a few renames. |
 
 ## Grading and autonomy

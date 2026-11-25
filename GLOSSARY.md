@@ -41,3 +41,7 @@ _Avoid_: extension, hook (a hook is a Claude Code hook), override
 **Decision log**
 The run's record of each decision made without asking the developer, one line each with what was decided and why. Kept at every autonomy level.
 _Avoid_: audit log, friction log (the friction log records what slowed a run down)
+
+**Teaching workspace**
+One topic's folder in `~/.claude/teach/<topic>/`, where the `teach` skill keeps what the developer is learning: the mission, learning records, lessons and notes on how they like to be taught. Never inside a repository.
+_Avoid_: knowledge bank, learner profile
