@@ -1,6 +1,7 @@
 ---
 import "../styles/site.css";
 import { REPO_URL } from "../lib/content";
+import Search from "../components/Search.astro";
 
 interface Props {
   title: string;
@@ -32,6 +33,7 @@ const nav = [
           {nav.map((n) => <a href={n.href} aria-current={n.active ? "page" : undefined}>{n.label}</a>)}
           <a href={REPO_URL}>GitHub</a>
         </nav>
+        <Search />
       </div>
     </header>
     <main class="wrap">

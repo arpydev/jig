@@ -134,3 +134,27 @@ main { padding: 48px 24px 80px; }
 
 .more { margin-top: 8px; }
 .more summary { cursor: pointer; font-size: 17px; font-weight: 600; padding: 12px 0; border-top: 1px solid var(--line); margin-bottom: 24px; }
+
+/* Search */
+.site-header nav { margin-left: auto; }
+.search-button { display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--muted); font: 14px var(--sans); cursor: pointer; }
+.search-button:hover { color: var(--ink); border-color: var(--muted); }
+.search kbd, .search-button kbd { font: 12px var(--mono); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--muted); }
+@media (max-width: 640px) { .search-label, .search-button kbd { display: none; } }
+
+dialog.search { width: min(640px, calc(100vw - 32px)); max-height: min(560px, calc(100vh - 120px)); margin: 12vh auto auto; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 64px rgb(0 0 0 / 0.25); flex-direction: column; overflow: hidden; }
+dialog.search[open] { display: flex; }
+dialog.search::backdrop { background: rgb(0 0 0 / 0.35); backdrop-filter: blur(2px); }
+.search-box { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--muted); }
+.search-box input { flex: 1; border: 0; outline: 0; background: none; color: var(--ink); font: 18px var(--sans); }
+#search-results { list-style: none; margin: 0; padding: 6px; overflow-y: auto; }
+#search-results a { display: block; padding: 8px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+#search-results [aria-selected="true"] a { background: var(--accent-soft); }
+.search-where { display: block; font-weight: 600; font-size: 15px; }
+.search-where span { color: var(--muted); font-weight: 400; }
+.search-snippet { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.search-snippet mark { background: none; color: var(--accent); font-weight: 600; }
+.search-empty { padding: 16px 10px; color: var(--muted); }
+.search-hint { margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+.search-hint kbd { margin-right: 2px; }
+.search-hint kbd + kbd { margin-left: 0; }

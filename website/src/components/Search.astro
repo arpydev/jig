@@ -1,0 +1,171 @@
+<button type="button" class="search-button" data-search-open aria-label="Search the site" aria-keyshortcuts="Meta+K Control+K /">
+  <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+  <span class="search-label">Search</span>
+  <kbd data-search-key>Ctrl K</kbd>
+</button>
+<dialog class="search" aria-label="Search the site">
+  <div class="search-box">
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+    <input type="text" role="combobox" aria-expanded="true" aria-controls="search-results" aria-autocomplete="list" placeholder="Search skills, the guide, the glossary…" autocomplete="off" spellcheck="false" />
+    <kbd>Esc</kbd>
+  </div>
+  <ul id="search-results" role="listbox" aria-label="Results"></ul>
+  <p class="search-hint"><kbd>↑</kbd><kbd>↓</kbd> to move <kbd>Enter</kbd> to go <kbd>Esc</kbd> to close</p>
+</dialog>
+
+<script>
+  type Entry = { url: string; page: string; heading: string; id: string; text: string };
+  type Hit = { entry: Entry; score: number; href: string; snippet: string };
+
+  const dialog = document.querySelector<HTMLDialogElement>("dialog.search")!;
+  const input = dialog.querySelector("input")!;
+  const list = dialog.querySelector("ul")!;
+  let index: Promise<Entry[]> | undefined;
+  let hits: Hit[] = [];
+  let active = 0;
+
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+  for (const k of document.querySelectorAll("[data-search-key]")) k.textContent = isMac ? "⌘K" : "Ctrl K";
+
+  const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  function open() {
+    if (dialog.open) return;
+    index ??= fetch("/search.json").then((r) => r.json());
+    dialog.showModal();
+    input.select();
+    update();
+  }
+
+  // A text fragment makes the browser scroll to and highlight the matched words.
+  function textFragment(text: string, at: number, length: number): string {
+    const start = text.lastIndexOf(" ", at) + 1;
+    let end = text.indexOf(" ", at + length);
+    if (end < 0) end = text.length;
+    const words = text.slice(start, end).replace(/[^\p{L}\p{N}]+$/u, "");
+    return `:~:text=${encodeURIComponent(words).replace(/-/g, "%2D")}`;
+  }
+
+  function snippet(text: string, terms: string[], at: number): string {
+    const from = Math.max(0, text.lastIndexOf(" ", Math.max(0, at - 50)) + 1);
+    const piece = text.slice(from, from + 140);
+    let html = escape(piece);
+    for (const t of terms) html = html.replace(new RegExp(`(${escape(t).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"), "<mark>$1</mark>");
+    return (from > 0 ? "…" : "") + html + (from + 140 < text.length ? "…" : "");
+  }
+
+  function search(entries: Entry[], query: string): Hit[] {
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) {
+      return entries.filter((e) => !e.heading).map((entry) => ({ entry, score: 0, href: entry.url, snippet: escape(entry.text.slice(0, 120)) }));
+    }
+    const phrase = terms.join(" ");
+    const out: Hit[] = [];
+    for (const entry of entries) {
+      const page = entry.page.toLowerCase();
+      const heading = entry.heading.toLowerCase();
+      const text = entry.text.toLowerCase();
+      // A section beyond the page's opening has to match on its own, not just through the page title.
+      if (entry.heading && !terms.some((t) => heading.includes(t) || text.includes(t))) continue;
+      if (!terms.every((t) => page.includes(t) || heading.includes(t) || text.includes(t))) continue;
+      let score = 0;
+      for (const t of terms) {
+        if (!entry.heading && page.includes(t)) score += page.startsWith(t) || page.startsWith(`/${t}`) ? 12 : 8;
+        if (heading.includes(t)) score += 6;
+        if (text.includes(t)) score += new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text) ? 2 : 1;
+      }
+      if (heading.includes(phrase)) score += 6;
+      if (terms.length > 1 && text.includes(phrase)) score += 4;
+
+      let href = entry.url + (entry.id ? `#${entry.id}` : "");
+      const inText = text.indexOf(terms.find((t) => text.includes(t)) ?? "\0");
+      const headingMatch = terms.some((t) => heading.includes(t));
+      if (!headingMatch && inText >= 0 && (entry.heading || !page.includes(terms[0]))) {
+        const at = text.includes(phrase) ? text.indexOf(phrase) : inText;
+        href += (entry.id ? "" : "#") + textFragment(entry.text, at, text.includes(phrase) ? phrase.length : terms[0].length);
+      } else if (headingMatch && !entry.id) {
+        href += `#:~:text=${encodeURIComponent(entry.heading).replace(/-/g, "%2D")}`;
+      }
+      out.push({ entry, score, href, snippet: inText >= 0 ? snippet(entry.text, terms, inText) : escape(entry.text.slice(0, 120)) });
+    }
+    return out.sort((a, b) => b.score - a.score).slice(0, 30);
+  }
+
+  async function update() {
+    const query = input.value;
+    const entries = await index!;
+    if (query !== input.value) return;
+    hits = search(entries, query);
+    active = 0;
+    list.innerHTML = hits.length
+      ? hits
+          .map(
+            (h, i) => `<li role="option" id="search-opt-${i}"><a href="${escape(h.href)}" tabindex="-1">
+              <span class="search-where">${escape(h.entry.page)}${h.entry.heading ? ` <span aria-hidden="true">›</span> ${escape(h.entry.heading)}` : ""}</span>
+              <span class="search-snippet">${h.snippet}</span></a></li>`,
+          )
+          .join("")
+      : `<li class="search-empty">No matches for “${escape(query)}”</li>`;
+    highlight();
+  }
+
+  function highlight() {
+    list.querySelectorAll("[role=option]").forEach((li, i) => li.setAttribute("aria-selected", String(i === active)));
+    const current = list.querySelector<HTMLElement>(`#search-opt-${active}`);
+    input.setAttribute("aria-activedescendant", current ? current.id : "");
+    current?.scrollIntoView({ block: "nearest" });
+  }
+
+  function go(hit: Hit | undefined) {
+    if (!hit) return;
+    dialog.close();
+    location.assign(hit.href);
+  }
+
+  document.querySelector("[data-search-open]")!.addEventListener("click", open);
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      dialog.open ? dialog.close() : open();
+    } else if (e.key === "/" && !dialog.open) {
+      const t = e.target as HTMLElement;
+      if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      e.preventDefault();
+      open();
+    }
+  });
+
+  input.addEventListener("input", update);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!hits.length) return;
+      active = (active + (e.key === "ArrowDown" ? 1 : hits.length - 1)) % hits.length;
+      highlight();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      go(hits[active]);
+    }
+  });
+
+  list.addEventListener("mousemove", (e) => {
+    const li = (e.target as HTMLElement).closest("[role=option]");
+    const i = li ? Number(li.id.replace("search-opt-", "")) : -1;
+    if (i >= 0 && i !== active) {
+      active = i;
+      highlight();
+    }
+  });
+  list.addEventListener("click", (e) => {
+    const li = (e.target as HTMLElement).closest("[role=option]");
+    if (!li || (e as MouseEvent).metaKey || (e as MouseEvent).ctrlKey) return;
+    e.preventDefault();
+    go(hits[Number(li.id.replace("search-opt-", ""))]);
+  });
+
+  // A click on the backdrop closes the palette.
+  dialog.addEventListener("click", (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+</script>
