@@ -32,13 +32,18 @@ Steps 3 and 4 run spec to PR: implementer subagents work the tickets in their ow
 
 ## Install
 
+You need Claude Code, git and Python 3. The GitHub CLI (`gh`) is needed only if your tickets are GitHub issues.
+
 ```bash
+git clone https://github.com/arpydev/jig.git
 cd jig
-./install.sh --dry-run --pack <pack folder>
-./install.sh --pack <pack folder>
+./install.sh --dry-run
+./install.sh
 ```
 
-`install.sh` links the core's skills, agents and hooks, and each pack's, into `~/.claude`. It registers the hooks listed in each `hooks/hooks.json` in `settings.json` (the core's are `context-guard`, `zsh-guard`, `git-guard`, `outbound-guard` and `docs-guard`), adds an import of `preferences.md` to `~/.claude/CLAUDE.md`, and asks once whether you own the core. It is safe to rerun. Anything already in the way is reported as a conflict and left alone. With `--backup`, it is moved to `~/.claude/skills-backup/` and the link is made; nothing is deleted. A skill that both the core and a pack have is linked from the core.
+A pack is optional. To add one, run both commands with `--pack <pack folder>`.
+
+`install.sh` links the core's skills, agents and hooks, and each pack's, into `~/.claude`. It registers the hooks listed in each `hooks/hooks.json` in `settings.json` (the core's are `context-guard`, `zsh-guard`, `git-guard`, `outbound-guard` and `docs-guard`), adds an import of `preferences.md` to `~/.claude/CLAUDE.md`, and asks once whether you own the core. Answer yes only if you maintain your own copy of Jig: the retro then proposes edits to it, rather than drafting an issue for its maintainer. It is safe to rerun. Anything already in the way is reported as a conflict and left alone. With `--backup`, it is moved to `~/.claude/skills-backup/` and the link is made; nothing is deleted. A skill that both the core and a pack have is linked from the core.
 
 Start a new Claude Code session afterwards so the skills load.
 

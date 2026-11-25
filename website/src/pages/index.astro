@@ -1,33 +1,70 @@
 ---
 import Base from "../layouts/Base.astro";
-import { skills, inlineHtml } from "../lib/content";
+import SkillGroup from "../components/SkillGroup.astro";
+import { skills } from "../lib/content";
 import { GROUPS } from "../lib/groups";
 
 const byName = Object.fromEntries(skills().map((s) => [s.name, s]));
+// The first two groups are what a new user runs; the rest fold away.
+const MAIN_GROUPS = 2;
 ---
 <Base title="Jig">
   <section class="hero">
     <h1>Jig</h1>
     <p>A Claude Code workflow that takes work from an idea to a merged change, and gets better with every run. Scripts do the mechanical steps, a fresh grader scores every run, and the agent earns its autonomy.</p>
+    <p class="for">For developers who already use Claude Code and want every change to go through the same steps: agree the design, split it into tickets, build and review it, then grade the run. You approve each step until the grades show the agent can be trusted with more.</p>
+  </section>
+
+  <section class="loop" aria-labelledby="loop">
+    <h2 id="loop">How a change goes through Jig</h2>
+    <p class="lede">An example: you want to add a CSV export to your app.</p>
+    <ol class="steps">
+      <li>
+        <strong>Grill</strong> <code>/grill-with-docs</code>
+        <p>You describe the export. Claude <a href="/glossary/">grills</a> you: it asks questions in rounds, looks facts up in the code itself, and asks you only for decisions. It writes new terms to the glossary and hard-to-reverse decisions to ADRs as they settle.</p>
+      </li>
+      <li>
+        <strong>Spec and tickets</strong> <code>/to-spec</code> <code>/to-tickets</code>
+        <p>The agreed design becomes a spec, then tickets that can be built in parallel, each with a test per acceptance criterion.</p>
+      </li>
+      <li>
+        <strong>Build and review</strong> <code>/implement-spec</code>
+        <p>Subagents build the tickets in separate git worktrees, run your checks and merge their work on one branch. Three fresh reviewers check it against your standards, the spec and for bugs. You approve the plan and the pull request.</p>
+      </li>
+      <li>
+        <strong>Retro and grade</strong> <code>/retro</code> <code>/grade-run</code>
+        <p>A grader with no context scores the run from the transcript and diff. The score goes in the project's ledger. Each lesson becomes a script, check or hook, so the next run doesn't repeat the mistake.</p>
+      </li>
+    </ol>
+    <p class="note">Every project starts at autonomy level 0, where every checkpoint waits for you. Good grades let you raise it, and you decide each change. <a href="/guide/#grading-and-autonomy">How grading works</a></p>
   </section>
 
   <section class="install" aria-labelledby="install">
     <h2 id="install">Install</h2>
+    <p>You need Claude Code, git and Python 3. The GitHub CLI (<code>gh</code>) is needed only if your tickets are GitHub issues.</p>
     <ol>
       <li>Clone it and see what the installer would do:
         <pre><code>git clone https://github.com/arpydev/jig.git
 cd jig
 ./install.sh --dry-run</code></pre>
       </li>
-      <li>Install. Add <code>--pack &lt;folder&gt;</code> to install a skill pack as well.
+      <li>Install:
         <pre><code>./install.sh</code></pre>
+        A <a href="/glossary/">pack</a> holds your own or your organisation's skills on top of Jig. You don't need one to start. To add one, run both commands with <code>--pack &lt;folder&gt;</code>.
       </li>
-      <li>Start a new Claude Code session and run <code>/setup-workflow</code> in each repository.</li>
+      <li>Start a new Claude Code session and run <code>/setup-workflow</code> in each repository. It finds your tracker, check command and glossary, asks you for the rest, and writes <code>.claude/workflow.json</code>.</li>
+      <li>Try it on a small change: run <code>/grill-with-docs</code> and describe what you want.</li>
     </ol>
-    <p class="note">The installer links skills, agents and hooks into <code>~/.claude</code>, is safe to rerun, and never deletes anything. Your own skills go in a <a href="/glossary/">pack</a>.</p>
+    <p class="note">The installer changes these files in <code>~/.claude</code>:</p>
+    <ul class="note">
+      <li>It links Jig's skills, agents and hooks into <code>skills/</code>, <code>agents/</code> and <code>hooks/</code>.</li>
+      <li>It adds five hooks to <code>settings.json</code>. They suggest a fresh session when the context gets large, block shell commands that zsh misreads, block force pushes without <code>--force-with-lease</code>, ask you before anything is posted to GitHub, Jira or Confluence, and keep the glossary and ADRs where the project keeps them.</li>
+      <li>It adds a line to <code>CLAUDE.md</code> that imports Jig's <a href="https://github.com/arpydev/jig/blob/main/preferences.md">preferences</a>.</li>
+    </ul>
+    <p class="note">It is safe to rerun and never deletes anything. If a file is already in the way, it reports a conflict and leaves the file alone.</p>
   </section>
 
-  <section class="pillars" aria-label="How it works">
+  <section class="pillars" aria-label="Principles">
     <div class="pillar">
       <h3>Scripts over prose</h3>
       <p>A driver owns the order of each run, so the agent only does work that needs judgement. <a href="/decisions/#scripts-over-prose">Why</a></p>
@@ -43,23 +80,10 @@ cd jig
   </section>
 
   <section id="skills">
-    {GROUPS.map((g, i) => (
-      <div class="group">
-        <div class="group-head">
-          <span class="group-num">{String(i + 1).padStart(2, "0")}</span>
-          <h2>{g.title}</h2>
-          <p>{g.intro}</p>
-          <a class="start" href={`/skills/${g.start}/`}>Start with /{g.start}</a>
-        </div>
-        <div class="cards">
-          {g.skills.map((name) => (
-            <a class="card" href={`/skills/${name}/`}>
-              <code>/{name}</code>
-              <span set:html={inlineHtml(byName[name].summary)} />
-            </a>
-          ))}
-        </div>
-      </div>
-    ))}
+    {GROUPS.slice(0, MAIN_GROUPS).map((g, i) => <SkillGroup group={g} num={i + 1} byName={byName} />)}
+    <details class="more">
+      <summary>More skills: shaping, engineering and reference</summary>
+      {GROUPS.slice(MAIN_GROUPS).map((g, i) => <SkillGroup group={g} num={i + MAIN_GROUPS + 1} byName={byName} />)}
+    </details>
   </section>
 </Base>

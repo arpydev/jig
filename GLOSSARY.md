@@ -10,6 +10,10 @@ _Avoid_: base skills, generic skills
 A skill pack: one person's or one organisation's own skills, step files and hooks, kept in their own folder and added on top of the core. Custom skills always go in a pack. A pack skill can later move into the core.
 _Avoid_: extension, profile, plugin
 
+**Grill**
+An interview in rounds, run by the `grilling` skill, until nothing about a design or plan is silently assumed. Claude looks facts up itself and asks the developer only for decisions, each with a recommended answer. The first step of the loop.
+_Avoid_: interview, Q&A
+
 **Project settings**
 The files that tell the core how one repository works: its tracker, checks, deploy and dev-test steps, where run data goes, and whether its glossary and ADRs are kept in the repository.
 _Avoid_: profile, config
