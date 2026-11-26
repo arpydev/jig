@@ -24,7 +24,7 @@ Use pnpm for Node work, unless the repository already has another package manage
 
 ## The environment over memory
 
-Anything that can be proven is proven by the environment, not held in memory. If code or a live system can prove a fact, a script derives it on demand. If a mistake can be caught mechanically, a hook or check enforces the rule. Memory keeps only what nothing can prove: preferences, agreements, decisions with their reasons, and plans or dates not yet recorded anywhere. Before saving a memory, ask whether a script could derive it, and propose the script instead. Keep documentation to the least that does the job, and delete prose once a script or check takes over its rule. A memory goes stale without anyone noticing and costs context on every load; a script or check stays correct.
+Anything that can be proven is proven by the environment, not held in memory. If code or a live system can prove a fact, a script derives it on demand. If a mistake can be caught mechanically, a hook or check enforces the rule. Memory keeps only what nothing can prove: preferences, agreements, decisions with their reasons, and plans or dates not yet recorded anywhere. Before saving a memory, ask whether a script could derive it, and propose the script instead. Keep documentation to the least that does the job, and delete prose once a script or check takes over its rule. A memory goes stale without anyone noticing and costs context on every load; a script or check stays correct. When a step has no script or skill that covers it, say so before doing it by hand and suggest the script that would: improvising silently hides the gap and can drift off task.
 
 ## Commit messages
 

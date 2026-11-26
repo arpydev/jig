@@ -124,7 +124,8 @@ Iterate until the user approves the breakdown. Then draft each ticket in full, a
 Publish the approved tickets. **How** depends on the tracker `/setup-workflow` configured; the tickets are the same either way, only the shape of the blocking edges changes:
 
 - **Local files** → write one file per ticket under `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first). Each file's "Blocked by" lists the numbers/titles it depends on. Use the per-ticket file template below: one ticket per file, never a single combined file.
-- **A real issue tracker (GitHub, Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. If the source was an existing issue, make each ticket its sub-issue (tracker doc's operation). Apply the `ready-for-agent` triage label unless instructed otherwise; the tickets are agent-grabbable by construction.
+- **GitHub** → write the approved drafts to one file, each ticket under a `# <NN>: <Title>` heading in dependency order with its body in the issue template, then run `scripts/publish.py <drafts.md> --repo <owner/name>` (add `--parent <number>` when the source was an existing issue, and `--dry-run` first). It creates the `ready-for-agent` label if missing, publishes blockers first, turns draft numbers into real ones, and sets GitHub's own blocked-by and sub-issue links. It is safe to rerun.
+- **Another issue tracker (Linear, …)** → publish one issue per ticket in dependency order (blockers first) so each ticket's blocking edges can reference real identifiers. Use the platform's native blocking relationship where it has one; otherwise set each ticket's "Blocked by" to the blocking issues. If the source was an existing issue, make each ticket its sub-issue (tracker doc's operation). Apply the `ready-for-agent` triage label unless instructed otherwise; the tickets are agent-grabbable by construction. When no script covers the tracker, say so and suggest one before publishing by hand.
 
 Work the **frontier**: any ticket whose blockers are all done. For a purely linear chain that means top to bottom.
 
@@ -176,7 +177,7 @@ The seeds, fixtures or records the tests need, or "None".
 
 ## Blocked by
 
-- A reference to each blocking ticket, or "None (can start immediately)". Omit this section when blockers were set as native edges.
+- A reference to each blocking ticket, or "None (can start immediately)". In a drafts file for `publish.py`, `#<NN>` names another draft.
 
 ## Likely to touch
 
@@ -202,3 +203,4 @@ Taken 2026-11-23 from github.com/mattpocock/skills at commit abeeaf9 (`skills/en
 | 2026-11-25 | Runs `settings.py steps tickets` for its step additions | Packs and projects add their rules without changing the core | Local only |
 | 2026-11-25 | Each ticket carries a "Why" line, a test per AC and the test data needed | The tickets are the plan in spec to PR, and these were the gaps against a pack's delivery plan | Propose upstream |
 | 2026-11-25 | "Likely to touch" names each area's folder | `drive.py` matches touches as paths, so areas alone ran every ticket alone | Local only |
+| 2026-11-26 | GitHub publishing runs `scripts/publish.py` | Publishing by hand rebuilt the same steps each run and skipped GitHub's own blocked-by links | Local only |

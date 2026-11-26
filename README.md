@@ -48,6 +48,7 @@ Each script answers one question on demand, so skills don't keep the answer in p
 | `skills/grade-run/scripts/ledger.py` | What grades has the project recorded, and what is the autonomy level? |
 | `skills/knowledge-map/scripts/knowledge.py` | How well does the developer know the area this work touches, and is their evidence still fresh? |
 | `skills/retro/scripts/lookups.py` | Which lookups did a run repeat that a script could answer? |
+| `skills/to-tickets/scripts/publish.py` | Are the approved ticket drafts on GitHub, with their blocked-by links? |
 
 ## Releasing
 
