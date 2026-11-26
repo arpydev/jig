@@ -10,6 +10,14 @@ _Avoid_: base skills, generic skills
 A skill pack: one person's or one organisation's own skills, step files and hooks, kept in their own folder and added on top of the core. Custom skills always go in a pack. A pack skill can later move into the core.
 _Avoid_: extension, profile, plugin
 
+**Skill overlap**
+Two skills that would trigger on the same request, or that do the same job. Found so that one can be merged into the other or removed.
+_Avoid_: duplicate (a pack skill that reuses a core skill's name)
+
+**Alias skill**
+A skill that only loads another skill and that only the developer can start, kept so a familiar name still works, such as `grill-me`. Never counted as a skill overlap.
+_Avoid_: wrapper, shortcut
+
 **Grill**
 An interview in rounds, run by the `grilling` skill, until nothing about a design or plan is silently assumed. Claude looks facts up itself and asks the developer only for decisions, each with a recommended answer. The first step of the loop.
 _Avoid_: interview, Q&A
