@@ -33,3 +33,7 @@ A short title, then one to four short bullets that start with a verb ("- Adds…
 ## Rebase rather than merge
 
 When bringing a branch up to date or clearing conflicts, rebase onto the main branch (`git rebase origin/main`) and push with `--force-with-lease`, after confirming the push. Fall back to a merge only when a rebase isn't practical, and say why. On someone else's pull request, flag the conflict to its author rather than pushing. The git-guard hook asks before a merge of main and denies a plain force push.
+
+## New skills start as tickets
+
+When an idea for a new skill comes up ("let's make a skill for that"), don't write it straight away. Grill the idea, agree a plan, then publish the plan as a ticket in the repository the skill belongs in (the core or a pack), labelled `ready-for-agent`. Skills are built later, a batch of tickets in one session, then released together. A planned backlog shows what is coming and catches overlaps before they are built.

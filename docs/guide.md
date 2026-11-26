@@ -30,6 +30,13 @@ The retro, the grader and the autonomy ladder are this workflow's own.
 
 Steps 3 and 4 run spec to PR: implementer subagents work the tickets in their own worktrees, a merger joins their work on an integration branch, then the whole change is reviewed and each ticket is graded. A pack can add an interactive mode, where you approve each checkpoint of one ticket, and share the same review, grader, ledger and retro.
 
+## Adding a skill
+
+1. **Idea:** say what you want a skill for, in any session.
+2. **Grill:** `grilling` settles the design.
+3. **Plan, then ticket:** Claude writes a plan you can read at a glance. Once you approve it, `to-tickets` publishes it as a `ready-for-agent` issue in the core or the pack it belongs to.
+4. **Build in batches:** one session builds a chunk of tickets, then `release.sh` ships them together.
+
 ## Install
 
 You need macOS, Linux or WSL on Windows, with Claude Code, git and Python 3. Native Windows is not supported: the scripts need bash, real symlinks and `python3`. With WSL, run Claude Code inside WSL too, so `~/.claude` is the Linux one. The GitHub CLI (`gh`) is needed only if your tickets are GitHub issues.
