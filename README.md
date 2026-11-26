@@ -34,6 +34,7 @@ Each script answers one question on demand, so skills don't keep the answer in p
 |---|---|
 | `install.sh` | Are the core's and each pack's skills, agents and hooks linked into `~/.claude`? |
 | `update.sh` | Is the core on the latest release, with every installed pack pulled and relinked? |
+| `release.sh` | What is the next release version, and what goes in its notes? |
 | `uninstall.sh` | What did `install.sh` add to `~/.claude`, and can it be removed? |
 | `scripts/hooks.py` | Are the hook entries from each `hooks/hooks.json` in `settings.json`? |
 | `scripts/skill_refs.py` | Does every skill name only scripts, files and skills that exist? |
@@ -49,12 +50,7 @@ Each script answers one question on demand, so skills don't keep the answer in p
 
 ## Releasing
 
-Users are prompted to update only when a new `vX.Y.Z` tag reaches GitHub, so a change on main reaches them only once it is released. To release, tag main and publish notes:
-
-```bash
-git tag v0.1.0 && git push origin v0.1.0
-gh release create v0.1.0 --generate-notes
-```
+Users are prompted to update only when a new `vX.Y.Z` tag reaches GitHub, so a change on main reaches them only once it is released. When a skill or two is ready, run `./release.sh --dry-run`, then `./release.sh`. It works out the version from the commit titles since the last tag: a patch if every title starts with "Fix", otherwise a minor. A major happens only with `--major`. The notes are those titles. It asks before it tags, pushes and publishes the GitHub release.
 
 ## Tests
 
