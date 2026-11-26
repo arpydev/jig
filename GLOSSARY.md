@@ -49,3 +49,19 @@ _Avoid_: audit log, friction log (the friction log records what slowed a run dow
 **Teaching workspace**
 One topic's folder in `~/.claude/teach/<topic>/`, where the `teach` skill keeps what the developer is learning: the mission, learning records, lessons and notes on how they like to be taught. Never inside a repository.
 _Avoid_: knowledge bank, learner profile
+
+**Diagram kind**
+One sort of diagram, such as a status flow, a call tree or a dependency graph, defined by the script that reads it out of the code and any rules it is checked against.
+_Avoid_: diagram type, template
+
+**AST tool**
+The parser a project uses to read one language's code as a syntax tree. Chosen by the developer for each language, never bundled by the core.
+_Avoid_: parser plugin
+
+**Plan diagram**
+A diagram drawn at the start of a task showing the change Claude intends to make: the code as it is plus the planned edits. Kept only until the task ends.
+_Avoid_: design diagram, expected diagram
+
+**Proof diagram**
+A diagram read out of the code at the end of a task and checked against the plan diagram, with the before and after merged so the change stands out. A difference from the plan diagram fails the check.
+_Avoid_: evidence chart, diff diagram

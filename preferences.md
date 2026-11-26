@@ -14,6 +14,14 @@ A plan says what will change in plain words, one row per change with its reason,
 
 Prefer modular code that is easy to change, and the smallest infrastructure change that works now, with one line on how it would grow. Map every new field, status, table, index or resource to a current read or write, and rule out an existing one first; reuse an existing status before adding a parallel field; leave indexes and attributes until something needs them. The rules are in `codebase-design`'s "Simple and easy to change" section.
 
+## Suggesting tools
+
+When suggesting a tool, library or service the developer hasn't named, offer two to four, each with one line on what it is and its trade-off, and let the developer pick. Never introduce one by name alone.
+
+## pnpm for Node
+
+Use pnpm for Node work, unless the repository already has another package manager's lockfile.
+
 ## The environment over memory
 
 Anything that can be proven is proven by the environment, not held in memory. If code or a live system can prove a fact, a script derives it on demand. If a mistake can be caught mechanically, a hook or check enforces the rule. Memory keeps only what nothing can prove: preferences, agreements, decisions with their reasons, and plans or dates not yet recorded anywhere. Before saving a memory, ask whether a script could derive it, and propose the script instead. Keep documentation to the least that does the job, and delete prose once a script or check takes over its rule. A memory goes stale without anyone noticing and costs context on every load; a script or check stays correct.
