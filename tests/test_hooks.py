@@ -11,11 +11,16 @@ HOOKS = os.path.join(CORE, "hooks")
 HOOKS_PY = os.path.join(CORE, "scripts", "hooks.py")
 
 
-def run(hook, tool, tool_input, cwd="/tmp", env=None):
+def reason(hook, tool, tool_input, cwd="/tmp", env=None):
     payload = json.dumps({"tool_name": tool, "tool_input": tool_input, "cwd": cwd, "session_id": "t"})
     out = subprocess.run([sys.executable, "-I", os.path.join(HOOKS, hook)], input=payload,
                          capture_output=True, text=True, check=True, env=env).stdout.strip()
-    return json.loads(out)["hookSpecificOutput"]["permissionDecision"] if out else None
+    return json.loads(out)["hookSpecificOutput"] if out else None
+
+
+def run(hook, tool, tool_input, cwd="/tmp", env=None):
+    out = reason(hook, tool, tool_input, cwd, env)
+    return out["permissionDecision"] if out else None
 
 
 def bash(hook, command, cwd="/tmp"):
@@ -50,6 +55,29 @@ class Outbound(unittest.TestCase):
             env = dict(os.environ, OUTBOUND_CHECKS_DIR=checks)
             self.assertEqual(run(self.H, "Bash", {"command": "gh pr comment 1 -b sesame"}, env=env), "deny")
             self.assertEqual(run(self.H, "Bash", {"command": "gh pr comment 1 -b hello"}, env=env), "ask")
+
+    def test_pack_checks_warn_without_blocking(self):
+        with tempfile.TemporaryDirectory() as checks:
+            with open(os.path.join(checks, "nudge.py"), "w") as f:
+                f.write("def warn(text, cwd):\n    return ['Mind the gap.'] if 'gap' in text else []\n")
+            env = dict(os.environ, OUTBOUND_CHECKS_DIR=checks)
+            out = reason(self.H, "Bash", {"command": "gh pr comment 1 -b gap"}, env=env)
+            self.assertEqual(out["permissionDecision"], "ask")
+            self.assertIn("Mind the gap.", out["permissionDecisionReason"])
+
+    def test_knowledge_check_warns_on_areas_not_yet_known(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = os.path.join(tmp, "shop")
+            subprocess.run(["git", "init", "-q", repo], check=True)
+            os.makedirs(os.path.join(tmp, "knowledge"))
+            with open(os.path.join(tmp, "knowledge", "shop.md"), "w") as f:
+                f.write("# Knowledge map: shop\n\n## Baskets\n\n- Level: followed it\n- Paths: src/baskets/\n")
+            env = dict(os.environ, KNOWLEDGE_DIR=os.path.join(tmp, "knowledge"))
+            out = reason(self.H, "Bash", {"command": "gh pr comment 1 -b 'basket total fix'"}, cwd=repo, env=env)
+            self.assertEqual(out["permissionDecision"], "ask")
+            self.assertIn("Baskets (level is followed it)", out["permissionDecisionReason"])
+            out = reason(self.H, "Bash", {"command": "gh pr comment 1 -b 'unrelated'"}, cwd=repo, env=env)
+            self.assertNotIn("Knowledge map", out["permissionDecisionReason"])
 
 
 class Git(unittest.TestCase):

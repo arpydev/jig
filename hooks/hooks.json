@@ -4,6 +4,7 @@
     "zsh-guard.py",
     "git-guard.py",
     "outbound-guard.py",
+    "outbound-checks/knowledge.py",
     "docs-guard.py",
     "update-check.py"
   ],

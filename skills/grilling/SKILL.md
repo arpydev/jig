@@ -29,6 +29,10 @@ Finding _facts_ is your job, never the developer's. When a question needs a fact
 
 When the grill is about a project's design, load the `domain-modeling` skill before round 1 and read the repo's glossary and ADRs (the skill says where they live). Word questions in the glossary's terms. When the developer uses a term that clashes with the glossary, or a vague word, raise it in the round. Update the glossary as each term is settled, and offer an ADR only on the skill's three tests.
 
+## Knowledge check
+
+Load the `knowledge-map` skill and run its `status` with the paths the work touches. For each area it says to explain first, round 1 opens with that area's explain-back question, asked before you give the answer, and the rest of the grill explains in that area's user terms before its code terms.
+
 ## Direction
 
 If the project has a direction note (a step addition names it), read it before round 1. When the ticket touches something on its list (a shared data shape, a second way of doing something), put that choice to the developer as one question, with the cheapest option that keeps the direction open as your recommendation. Ask only where the choice would be hard to change later. Anything that only matters later is a "for later" note, not scope.

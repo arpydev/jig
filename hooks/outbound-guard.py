@@ -8,8 +8,10 @@ confirmation are not matched, because the hook sees only the command
 that runs the script.
 
 Packs add text checks without changing this file: every outbound-checks/*.py next to this hook
-(OUTBOUND_CHECKS_DIR overrides the folder) defines check(text), returning a reason to deny the
-write or None, such as a pack's check that denies anything that looks like a real customer identifier.
+(OUTBOUND_CHECKS_DIR overrides the folder) may define check(text), returning a reason to deny the
+write or None, such as a pack's check that denies anything that looks like a real customer identifier,
+and warn(text, cwd), returning lines to add to the prompt without blocking, such as the core's
+knowledge-map check.
 
 Never breaks a session: any error means it stays silent and the normal permission flow applies.
 """
@@ -51,35 +53,47 @@ def segments(command: str):
             yield part
 
 
-def decide(tool: str, tool_input: dict):
+def decide(tool: str, tool_input: dict, cwd: str = ""):
     """Return (decision, reason) or None."""
     if ATLASSIAN_WRITES.match(tool):
         text = json.dumps(tool_input, ensure_ascii=False)
-        return outbound_text_check(text) or ("ask", f"External write ({tool.split('__')[-1]}). Approve only if this is the wording you agreed.")
+        return outbound_text_check(text, cwd, f"External write ({tool.split('__')[-1]}). Approve only if this is the wording you agreed.")
     if tool == "Bash":
         command = tool_input.get("command", "")
         for seg in segments(command):
             for pattern, label in BASH_WRITES:
                 if pattern.search(seg):
-                    return outbound_text_check(command) or ("ask", f"External write ({label}). Approve only if you asked for this.")
+                    return outbound_text_check(command, cwd, f"External write ({label}). Approve only if you asked for this.")
     return None
 
 
-def outbound_text_check(text: str):
-    """Run each pack's text check; the first reason found denies the write."""
+def checks():
     for path in sorted(glob.glob(os.path.join(CHECKS_DIR, "*.py"))):
         spec = importlib.util.spec_from_file_location(os.path.basename(path)[:-3].replace("-", "_"), path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        reason = module.check(text)
+        yield module
+
+
+def outbound_text_check(text: str, cwd: str, ask_reason: str):
+    """Deny on the first check's reason; otherwise ask, with every check's warnings added."""
+    modules = list(checks())
+    for module in modules:
+        reason = getattr(module, "check", lambda _: None)(text)
         if reason:
             return ("deny", reason)
-    return None
+    warnings = []
+    for module in modules:
+        try:
+            warnings += getattr(module, "warn", lambda *_: [])(text, cwd) or []
+        except Exception:
+            pass  # why: a warning is advisory, so a broken one must not stop the prompt
+    return ("ask", " ".join([ask_reason, *warnings]))
 
 
 def main():
     data = json.load(sys.stdin)
-    result = decide(data.get("tool_name", ""), data.get("tool_input") or {})
+    result = decide(data.get("tool_name", ""), data.get("tool_input") or {}, data.get("cwd") or os.getcwd())
     if not result:
         return
     decision, reason = result
