@@ -29,7 +29,7 @@ When the developer wants to learn an area properly rather than get a task done, 
 For an area below **can explain** or re-check due, put the matching question to the developer before drafting is final, and let their answer shape the text:
 
 - **Test notes**: for each step, what would fail if the feature were removed? A step with no answer is not testing the feature.
-- **Tech-debt or bug tickets**: how does a real user or system reach this state? Name the code path, a data count or a status-flow trace. No reachable path, no ticket.
+- **Tech-debt or bug tickets**: how does a real user or system reach this state? Name the code path or a data count. No reachable path, no ticket.
 - **Documentation**: could you explain this section to a colleague without the doc in front of you?
 
 The outbound guard backs this up with a warning when outgoing text names such an area. It warns; it never blocks.
