@@ -64,7 +64,7 @@ if [ -f "$home/CLAUDE.md" ] && grep -qxF "$import_line" "$home/CLAUDE.md"; then
   fi
 fi
 
-for f in workflow-core.json workflow-packs workflow-hooks.json; do
+for f in workflow-core.json workflow-packs workflow-hooks.json workflow-update-check.json; do
   [ -f "$home/$f" ] || continue
   if [ "$dry" = 1 ]; then
     echo "would remove $home/$f"

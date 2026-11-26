@@ -22,6 +22,8 @@ cd jig
 
 Add `--pack <folder>` to both commands to install a skill pack as well. `install.sh` links the skills, agents and hooks into `~/.claude`, registers the hooks in `settings.json`, adds an import of `preferences.md` to `~/.claude/CLAUDE.md`, and is safe to rerun. Start a new Claude Code session afterwards, then run `/setup-workflow` in each repository.
 
+To update, run `./update.sh --dry-run`, then `./update.sh`. It moves the core to the latest release tag, pulls each installed pack that has a remote, removes links to skills a release dropped, and reruns `install.sh`. A session-start hook says when a newer release is out, checking at most once a day. Owners of the core pull main instead and get no prompt.
+
 To remove it, run `./uninstall.sh --dry-run`, then `./uninstall.sh`. It removes only what `install.sh` added: links into the core or an installed pack, the hook entries it recorded, the `preferences.md` import and its record files. Backups and each repository's own files stay.
 
 ## Scripts
@@ -31,6 +33,7 @@ Each script answers one question on demand, so skills don't keep the answer in p
 | Script | Question it answers |
 |---|---|
 | `install.sh` | Are the core's and each pack's skills, agents and hooks linked into `~/.claude`? |
+| `update.sh` | Is the core on the latest release, with every installed pack pulled and relinked? |
 | `uninstall.sh` | What did `install.sh` add to `~/.claude`, and can it be removed? |
 | `scripts/hooks.py` | Are the hook entries from each `hooks/hooks.json` in `settings.json`? |
 | `scripts/skill_refs.py` | Does every skill name only scripts, files and skills that exist? |
@@ -43,6 +46,15 @@ Each script answers one question on demand, so skills don't keep the answer in p
 | `skills/grade-run/scripts/transcript.py` | What did a run do, as plain text for the grader? |
 | `skills/grade-run/scripts/ledger.py` | What grades has the project recorded, and what is the autonomy level? |
 | `skills/retro/scripts/lookups.py` | Which lookups did a run repeat that a script could answer? |
+
+## Releasing
+
+Users are prompted to update only when a new `vX.Y.Z` tag reaches GitHub, so a change on main reaches them only once it is released. To release, tag main and publish notes:
+
+```bash
+git tag v0.1.0 && git push origin v0.1.0
+gh release create v0.1.0 --generate-notes
+```
 
 ## Tests
 

@@ -4,7 +4,8 @@
     "zsh-guard.py",
     "git-guard.py",
     "outbound-guard.py",
-    "docs-guard.py"
+    "docs-guard.py",
+    "update-check.py"
   ],
   "entries": [
     {
@@ -50,6 +51,11 @@
     {
       "event": "PostToolUse",
       "command": "python3 {hooks}/context-guard.py",
+      "timeout": 10
+    },
+    {
+      "event": "SessionStart",
+      "command": "python3 -I {hooks}/update-check.py",
       "timeout": 10
     }
   ]

@@ -43,9 +43,20 @@ cd jig
 
 A pack is optional. To add one, run both commands with `--pack <pack folder>`.
 
-`install.sh` links the core's skills, agents and hooks, and each pack's, into `~/.claude`. It registers the hooks listed in each `hooks/hooks.json` in `settings.json` (the core's are `context-guard`, `zsh-guard`, `git-guard`, `outbound-guard`, `docs-guard` and a skills-check reminder on every prompt), adds an import of `preferences.md` to `~/.claude/CLAUDE.md`, and asks once whether you own the core. Answer yes only if you maintain your own copy of Jig: the retro then proposes edits to it, rather than drafting an issue for its maintainer. It is safe to rerun. Anything already in the way is reported as a conflict and left alone. With `--backup`, it is moved to `~/.claude/skills-backup/` and the link is made; nothing is deleted. A skill that both the core and a pack have is linked from the core.
+`install.sh` links the core's skills, agents and hooks, and each pack's, into `~/.claude`. It registers the hooks listed in each `hooks/hooks.json` in `settings.json` (the core's are `context-guard`, `zsh-guard`, `git-guard`, `outbound-guard`, `docs-guard`, a skills-check reminder on every prompt, and `update-check`, which tells you at session start when a newer release is out), adds an import of `preferences.md` to `~/.claude/CLAUDE.md`, and asks once whether you own the core. Answer yes only if you maintain your own copy of Jig: the retro then proposes edits to it, rather than drafting an issue for its maintainer. It is safe to rerun. Anything already in the way is reported as a conflict and left alone. With `--backup`, it is moved to `~/.claude/skills-backup/` and the link is made; nothing is deleted. A skill that both the core and a pack have is linked from the core.
 
 Start a new Claude Code session afterwards so the skills load.
+
+### Update
+
+Jig ships as tagged releases (`v1.2.0`). Once a day, the first session you start asks GitHub for the newest tag, and if it is newer than yours, Claude Code shows one line naming the update command. To update:
+
+```bash
+./update.sh --dry-run
+./update.sh
+```
+
+`update.sh` moves the core to the latest release, pulls each installed pack that has a remote, removes links to skills a release dropped, and reruns `install.sh` with your packs. It stops if you have changed the core's files. If you own the core, it fast-forwards your current branch instead, and the session-start check stays quiet. Start a new session afterwards.
 
 To remove Jig, run `./uninstall.sh --dry-run`, then `./uninstall.sh`. It removes the links that point into the core or an installed pack, the hook entries `hooks.py` recorded, the `preferences.md` import and the `workflow-*` record files. It keeps `skills-backup/` and `agents-backup/`, and never touches a repository's settings, verification skill or run data.
 
