@@ -136,6 +136,15 @@ class Scope(Base):
         work = tr.work_repos(self.root, LOGIN)
         self.assertEqual([(os.path.basename(r), slug) for r, slug in work], [("shop", "acme-fictional/shop")])
 
+    def test_a_second_clone_of_the_same_repository_counts_once(self):
+        make_repo(self.root, "shop", "git@github.com:acme-fictional/shop.git")
+        make_repo(self.root, "shop-2", "https://github.com/acme-fictional/shop.git")
+        self.assertEqual([slug for _, slug in tr.work_repos(self.root, LOGIN)], ["acme-fictional/shop"])
+
+    def test_an_ssh_host_alias_origin_is_a_work_repository(self):
+        make_repo(self.root, "shop", "git@github-work:acme-fictional/shop.git")
+        self.assertEqual([slug for _, slug in tr.work_repos(self.root, LOGIN)], ["acme-fictional/shop"])
+
     def test_commits_count_every_email_github_links_to_the_developer_and_no_one_elses(self):
         repo = make_repo(self.root, "shop", "git@github.com:acme-fictional/shop.git")
         commit(repo, "one", "Dev Fictional", "dev@work.example.com", "2026-03-02")
@@ -193,6 +202,14 @@ class Signals(Base):
             review("2026-04-21", author=LOGIN), review("2026-04-22", repo="dev-fictional/notes"),
         ]))
         self.assertEqual(self.build()["reviews"], {"2026-03": {"shop": 1}, "2026-04": {"shop": 2}})
+
+    def test_a_review_counts_when_github_spells_the_repository_in_other_case(self):
+        self.work_repo()
+        self.use(FakeGh(emails=["dev@work.example.com"], reviews=[
+            {"occurredAt": "2026-04-02T10:00:00Z", "pullRequest": {
+                "url": "https://github.com/Acme-Fictional/Shop/pull/7", "author": {"login": "rev-a"},
+                "repository": {"nameWithOwner": "Acme-Fictional/Shop"}}}]))
+        self.assertEqual(self.build()["reviews"], {"2026-04": {"shop": 1}})
 
     def test_reviews_are_read_a_year_at_a_time_and_every_page(self):
         repo = make_repo(self.root, "shop", "git@github.com:acme-fictional/shop.git")

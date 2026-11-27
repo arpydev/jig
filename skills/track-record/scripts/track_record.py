@@ -36,7 +36,7 @@ def sibling(skill, name):
 knowledge = sibling("knowledge-map", "knowledge")
 ledger = sibling("grade-run", "ledger")
 GRADES = ["A", "B", "C", "D", "F"]  # why: the grader never gives an E, so D and F are one letter apart
-ORIGIN = re.compile(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?/?$")
+ORIGIN = re.compile(r"[:/]([^/:]+)/([^/:]+?)(?:\.git)?/?$")
 
 
 class GhError(Exception):
@@ -60,15 +60,18 @@ def git(repo, *args):
 
 
 def work_repos(root, login):
-    """[(path, "owner/name")] for each repository directly under root whose origin owner is not login."""
-    out = []
+    """[(path, "owner/name")] for each repository directly under root whose origin owner is not login,
+    one per owner/name when several clones share an origin."""
+    out, seen = [], set()
     for name in sorted(os.listdir(root)):
         path = os.path.join(root, name)
         if not os.path.exists(os.path.join(path, ".git")):
             continue
         m = ORIGIN.search(git(path, "remote", "get-url", "origin"))
-        if m and m.group(1).lower() != login.lower():
-            out.append((path, f"{m.group(1)}/{m.group(2)}"))
+        slug = m and f"{m.group(1)}/{m.group(2)}"
+        if m and m.group(1).lower() != login.lower() and slug.lower() not in seen:
+            seen.add(slug.lower())
+            out.append((path, slug))
     return out
 
 
@@ -116,6 +119,7 @@ REVIEWS_QUERY = """query($login: String!, $from: DateTime!, $to: DateTime!, $aft
 
 def reviews_given(login, projects, since, today):
     """One entry per review the developer gave on someone else's PR in a work repo, dated by the review.
+    projects maps a lower-case owner/name to its project name.
     contributionsCollection spans at most a year, so the range is read a year at a time."""
     out, start = [], since
     while start <= today:
@@ -129,7 +133,7 @@ def reviews_given(login, projects, since, today):
             page = gh(*args)["data"]["user"]["contributionsCollection"]["pullRequestReviewContributions"]
             for n in page["nodes"]:
                 pr = n["pullRequest"]
-                slug = pr["repository"]["nameWithOwner"]
+                slug = pr["repository"]["nameWithOwner"].lower()
                 author = (pr.get("author") or {}).get("login", "")
                 if slug in projects and author.lower() != login.lower():
                     out.append({"project": projects[slug], "url": pr["url"], "date": n["occurredAt"][:10]})
@@ -169,7 +173,7 @@ def collect(root, today=None):
     today = today or datetime.date.today()
     dates = [d for p in data["projects"] for d in p["commits"]] + [p["merged"] for p in data["prs"]]
     since = datetime.date.fromisoformat(min(dates)) if dates else today - datetime.timedelta(days=364)
-    data["reviews"] = reviews_given(login, {p["slug"]: p["name"] for p in data["projects"]}, since, today)
+    data["reviews"] = reviews_given(login, {p["slug"].lower(): p["name"] for p in data["projects"]}, since, today)
     return data
 
 
