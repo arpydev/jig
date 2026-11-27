@@ -43,9 +43,9 @@ SETTINGS = os.path.join(".claude", "workflow.json")
 RATCHET = os.path.join(os.path.dirname(os.path.realpath(__file__)), "ratchet.py")
 
 
-def fail(msg):
+def fail(msg, code=1):
     print(msg, file=sys.stderr)
-    sys.exit(1)
+    sys.exit(code)
 
 
 def main_checkout(repo):

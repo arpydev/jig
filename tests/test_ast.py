@@ -68,6 +68,14 @@ class FindTest(FixtureRepo):
         self.assertEqual(sorted(r.stdout.splitlines()), sorted([first, second]))
         self.assertIn("ask the developer", r.stderr)
 
+    def test_a_broken_settings_file_is_reported_not_read_as_nothing_saved(self):
+        os.makedirs(os.path.join(self.root, ".claude"))
+        with open(os.path.join(self.root, ".claude", "workflow.json"), "w") as f:
+            f.write('{"version": 1,')
+        r = self.ast("find", "typescript")
+        self.assertEqual((r.returncode, r.stdout), (1, ""))
+        self.assertIn("is not valid JSON", r.stderr)
+
     def test_no_candidate_says_so_and_prints_nothing(self):
         r = self.ast("find", "typescript")
         self.assertEqual(r.returncode, 3)

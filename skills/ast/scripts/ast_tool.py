@@ -11,30 +11,27 @@ Usage (run from anywhere inside the repository, or pass --repo):
                                    save the developer's pick as `ast.<language>` in the project
                                    settings, so the next `find` returns it
 """
+import importlib.util
 import os
-import subprocess
 import sys
 
-SETTINGS_PY = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
-                           "setup-workflow", "scripts", "settings.py")
+
+def setup_settings():
+    """Load setup-workflow's settings.py as a module, so the settings format stays its own business."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+                        "setup-workflow", "scripts", "settings.py")
+    spec = importlib.util.spec_from_file_location("settings", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+settings = setup_settings()
+fail = settings.fail
 LOCAL = {
     "typescript": ["typescript", "ts-morph"],
     "javascript": ["typescript", "@babel/parser", "acorn"],
 }
-
-
-def fail(msg, code=1):
-    print(msg, file=sys.stderr)
-    sys.exit(code)
-
-
-def main_checkout(repo):
-    try:
-        common = subprocess.run(["git", "-C", repo, "rev-parse", "--path-format=absolute", "--git-common-dir"],
-                                capture_output=True, text=True, check=True).stdout.strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        fail(f"not a git repository: {repo}")
-    return os.path.dirname(common)
 
 
 def local(root, language):
@@ -46,13 +43,12 @@ def local(root, language):
     return found
 
 
-def settings(root, *args):
-    return subprocess.run([sys.executable, SETTINGS_PY, *args, "--repo", root], capture_output=True, text=True)
-
-
 def chosen(root, language):
-    r = settings(root, "get", f"ast.{language}")
-    return r.stdout.strip() if r.returncode == 0 else None
+    """The saved ast.<language>, or None when there are no settings or no such key; a broken file fails."""
+    if not os.path.exists(os.path.join(root, settings.SETTINGS)):
+        return None
+    saved = settings.load(root).get("ast", {})
+    return saved.get(language) if isinstance(saved, dict) else None
 
 
 def find(root, language):
@@ -77,14 +73,11 @@ def main(argv):
         i = argv.index("--repo")
         repo = argv[i + 1]
         del argv[i:i + 2]
-    root = main_checkout(repo)
+    root = settings.main_checkout(repo)
     if len(argv) == 2 and argv[0] == "find":
         find(root, argv[1].lower())
     elif len(argv) == 3 and argv[0] == "save":
-        r = settings(root, "set", f"ast.{argv[1].lower()}", argv[2])
-        sys.stdout.write(r.stdout)
-        sys.stderr.write(r.stderr)
-        sys.exit(r.returncode)
+        settings.save(root, settings.load(root), f"ast.{argv[1].lower()}", argv[2])
     else:
         fail(__doc__)
 
