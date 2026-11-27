@@ -91,10 +91,15 @@ def report_dir():
     return os.environ.get("TRACK_RECORD_DIR") or os.path.expanduser("~/.claude/report")
 
 
+PR_LIMIT = 1000
+
+
 def merged_prs(project, slug, login):
     """The developer's merged PRs in one repository, with the facts the signals need."""
-    raw = gh("pr", "list", "--repo", slug, "--author", login, "--state", "merged", "--limit", "1000",
+    raw = gh("pr", "list", "--repo", slug, "--author", login, "--state", "merged", "--limit", str(PR_LIMIT),
              "--json", "number,title,url,mergedAt,reviews,commits,files")
+    if len(raw or []) >= PR_LIMIT:
+        print(f"track_record.py: {slug}: stopped at {PR_LIMIT} merged PRs; older ones are left out", file=sys.stderr)
     out = []
     for p in raw or []:
         reviews = sorted(r["submittedAt"] for r in p.get("reviews") or []

@@ -173,6 +173,17 @@ class Failures(Base):
         self.assertIn("skipped acme-fictional/gone", err.getvalue())
 
 
+    def test_hitting_the_pr_limit_is_warned_about(self):
+        self.work_repo()
+        self.use(FakeGh(emails=["dev@work.example.com"], prs=[pr(1, "2026-03-05"), pr(2, "2026-03-06")]))
+        saved, tr.PR_LIMIT = tr.PR_LIMIT, 2
+        self.addCleanup(setattr, tr, "PR_LIMIT", saved)
+        err = io.StringIO()
+        with redirect_stderr(err):
+            self.build()
+        self.assertIn("acme-fictional/shop: stopped at 2 merged PRs", err.getvalue())
+
+
 class Signals(Base):
     def test_merged_prs_per_month_and_rework_rate_match_gh(self):
         self.work_repo()
