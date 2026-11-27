@@ -73,3 +73,7 @@ _Avoid_: design diagram, expected diagram
 **Proof diagram**
 A diagram read out of the code at the end of a task and checked against the plan diagram, with the before and after merged so the change stands out. A difference from the plan diagram fails the check.
 _Avoid_: evidence chart, diff diagram
+
+**Track record**
+The developer's own record across their work repositories, worked out from git, gh, the knowledge map and the grade ledger on each run, by the `track-record` skill. Kept in `~/.claude/report/` as a page and a CV-safe snapshot; the only hand-kept part is one impact line per PR.
+_Avoid_: performance review, stats

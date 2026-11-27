@@ -40,6 +40,21 @@ export const GROUPS: Group[] = [
     title: "Reference",
     intro: "The shared layer other skills load or cite.",
     start: "grilling",
-    skills: ["grilling", "domain-modeling", "codebase-design", "knowledge-map", "tdd", "writing-for-agents"],
+    skills: [
+      "grilling",
+      "domain-modeling",
+      "codebase-design",
+      "knowledge-map",
+      "tdd",
+      "writing-for-agents",
+      "diagram",
+      "ast",
+    ],
+  },
+  {
+    title: "Your record",
+    intro: "See what you have done and how it holds up, from evidence.",
+    start: "track-record",
+    skills: ["track-record"],
   },
 ];

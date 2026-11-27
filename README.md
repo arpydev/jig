@@ -46,6 +46,7 @@ Each script answers one question on demand, so skills don't keep the answer in p
 | `skills/implement-spec/scripts/drive.py` | What is the next mechanical step of a spec-to-PR run? |
 | `skills/grade-run/scripts/transcript.py` | What did a run do, as plain text for the grader? |
 | `skills/grade-run/scripts/ledger.py` | What grades has the project recorded, and what is the autonomy level? |
+| `skills/track-record/scripts/track_record.py` | What has the developer done across their work repositories, and how does it hold up? |
 | `skills/knowledge-map/scripts/knowledge.py` | How well does the developer know the area this work touches, and is their evidence still fresh? |
 | `skills/writing-for-agents/scripts/skill_overlap.py` | Which skills does the developer have, how often is each used, and which pairs look like a skill overlap? |
 | `skills/retro/scripts/lookups.py` | Which lookups did a run repeat that a script could answer? |
