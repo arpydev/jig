@@ -10,8 +10,7 @@
 # The notes are those titles, oldest first. It shows both and asks before changing anything;
 # --yes skips the question (needed without a terminal), --dry-run stops after showing them.
 # Main must not be behind origin/main. Local commits not yet pushed are pushed with the tag.
-# Then it pushes an annotated tag and fast-forwards the release branch to it in one atomic push,
-# and runs gh release create.
+# Then it pushes an annotated tag and the release branch at it in one atomic push, and runs gh release create.
 # JIG_GH overrides the gh command (used by the tests).
 set -euo pipefail
 
