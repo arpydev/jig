@@ -26,7 +26,7 @@ import os
 import re
 import sys
 
-CORE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+CORE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 THRESHOLD = 0.2
 STOPWORDS = set("""a an and any are as asks at be before by can do does for from has have how in
 into is it its of on or say says should skill so someone that the their them this to use user

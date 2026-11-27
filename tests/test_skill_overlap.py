@@ -2,6 +2,7 @@
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -101,6 +102,15 @@ class SkillOverlapTest(unittest.TestCase):
         with redirect_stdout(out):
             skill_overlap.main(["--core", self.core, "--claude-home", self.home])
         self.assertIn("transcripts: none in", out.getvalue())
+
+    def test_default_core_through_an_installed_skill_link_is_the_real_core(self):
+        installed = os.path.join(self.home, "skills")
+        os.makedirs(installed)
+        os.symlink(os.path.join(ROOT, "skills", "writing-for-agents"), os.path.join(installed, "writing-for-agents"))
+        script = os.path.join(installed, "writing-for-agents", "scripts", "skill_overlap.py")
+        out = subprocess.run([sys.executable, "-I", script, "--claude-home", self.home],
+                             capture_output=True, text=True, check=True).stdout
+        self.assertIn("| tdd | core |", out)
 
 
 if __name__ == "__main__":
