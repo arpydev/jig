@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 
+from test_ast import SETTINGS
 from test_status_flow import needs_node, read_json, run, typescript5
 
 CORE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -174,6 +175,16 @@ class CompilerLookupTest(unittest.TestCase):
         self.assertIn("TypeScript 7.0.1 has no stable JS API", r.stderr)
         r = self.extract("--typescript", typescript5())
         self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_a_saved_relative_typescript_path_loads_from_the_repository_root(self):
+        os.makedirs(os.path.join(self.root, "vendor"))
+        os.symlink(typescript5(), os.path.join(self.root, "vendor", "ts5"))
+        os.makedirs(os.path.join(self.root, ".claude"))
+        with open(os.path.join(self.root, ".claude", "workflow.json"), "w") as f:
+            json.dump(dict(SETTINGS, ast={"typescript": "vendor/ts5"}), f)
+        r = self.extract()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("main.ts#main", node_ids(json.loads(r.stdout)))
 
     def test_the_kind_bundles_no_typescript(self):
         package = read_json(os.path.join(KIND, "package.json"))
