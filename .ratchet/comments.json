@@ -1,0 +1,28 @@
+{
+  "rule": "comments",
+  "command": "python3 skills/setup-workflow/scripts/ratchet.py comments",
+  "reason": "Let names, types and tests carry the meaning; mark a reason the code can't show with why:",
+  "baseline": {
+    "hooks/outbound-guard.py": 2,
+    "hooks/update-check.py": 1,
+    "hooks/zsh-guard.py": 2,
+    "install.sh": 19,
+    "release.sh": 11,
+    "scripts/skill_refs.py": 1,
+    "skills/diagnosing-bugs/scripts/hitl-loop.template.sh": 13,
+    "skills/diagnosing-bugs/upstream/scripts/hitl-loop.template.sh": 13,
+    "skills/grade-run/scripts/ledger.py": 1,
+    "skills/grade-run/scripts/transcript.py": 4,
+    "skills/implement-spec/scripts/drive.py": 3,
+    "skills/knowledge-map/scripts/knowledge.py": 1,
+    "skills/retro/scripts/lookups.py": 4,
+    "tests/test_drive.py": 2,
+    "tests/test_lookups.py": 2,
+    "uninstall.sh": 6,
+    "update.sh": 12,
+    "website/astro.config.mjs": 1,
+    "website/src/lib/content.ts": 6,
+    "website/src/lib/groups.ts": 2,
+    "website/src/pages/search.json.ts": 4
+  }
+}

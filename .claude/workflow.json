@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "committed": true,
+  "tracker": {
+    "kind": "github",
+    "tickets": "gh issue view <n> --repo arpydev/jig --json number,title,body,labels; blockers from gh api repos/arpydev/jig/issues/<n>/dependencies/blocked_by --jq '.[] | {number, state}'"
+  },
+  "checks": "python3 -m unittest discover -s tests && python3 skills/setup-workflow/scripts/ratchet.py check",
+  "implementers": 1,
+  "ratchet": "skills/setup-workflow/scripts/ratchet.py",
+  "docs": {
+    "glossary": "GLOSSARY.md",
+    "adr": "docs/decisions.md"
+  },
+  "runData": ".claude/workflow-runs",
+  "verifySkill": "verify-jig"
+}
