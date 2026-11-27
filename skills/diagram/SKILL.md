@@ -14,6 +14,7 @@ Install once with `pnpm install --dir ~/.claude/skills/diagram`. Only drawing ne
 Each kind adds a line here: what it draws and the command that extracts its graph file.
 
 - **Status flow** ([how to use it](kinds/status-flow/references/status-flow.md)): a TypeScript state machine's states and transitions, checked against a rules file. Extract with `node ~/.claude/skills/diagram/kinds/status-flow/scripts/extract.mjs <file.ts> --states <type>`.
+- **Call tree** ([how to use it](kinds/call-tree/references/call-tree.md)): every function one TypeScript function reaches across files, with calls into packages as leaves. Extract with `node ~/.claude/skills/diagram/kinds/call-tree/scripts/extract.mjs <file.ts> --function <name>`.
 
 ## Scripts
 

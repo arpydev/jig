@@ -1,0 +1,29 @@
+{
+  "title": "Calls from main in main.ts",
+  "groups": [
+    {"id": "main.ts", "label": "main.ts"},
+    {"id": "orders.ts", "label": "orders.ts"},
+    {"id": "pricing.ts", "label": "pricing.ts"},
+    {"id": "tiny-format", "label": "tiny-format (package)"}
+  ],
+  "nodes": [
+    {"id": "main.ts#main", "label": "main", "group": "main.ts"},
+    {"id": "orders.ts#placeOrder", "label": "placeOrder", "group": "orders.ts"},
+    {"id": "pricing.ts#priceOf", "label": "priceOf", "group": "pricing.ts"},
+    {"id": "tiny-format#formatLine", "label": "formatLine", "group": "tiny-format"},
+    {"id": "orders.ts#expandTree", "label": "expandTree", "group": "orders.ts"},
+    {"id": "pricing.ts#Discounts.apply", "label": "Discounts.apply", "group": "pricing.ts"},
+    {"id": "pricing.ts#walkTree", "label": "walkTree", "group": "pricing.ts"},
+    {"id": "pricing.ts#roundPrice", "label": "roundPrice", "group": "pricing.ts"}
+  ],
+  "edges": [
+    {"from": "main.ts#main", "to": "orders.ts#placeOrder"},
+    {"from": "orders.ts#placeOrder", "to": "pricing.ts#priceOf"},
+    {"from": "orders.ts#placeOrder", "to": "tiny-format#formatLine"},
+    {"from": "orders.ts#placeOrder", "to": "orders.ts#expandTree"},
+    {"from": "pricing.ts#priceOf", "to": "pricing.ts#Discounts.apply"},
+    {"from": "orders.ts#expandTree", "to": "pricing.ts#walkTree"},
+    {"from": "pricing.ts#Discounts.apply", "to": "pricing.ts#roundPrice"},
+    {"from": "pricing.ts#walkTree", "to": "orders.ts#expandTree"}
+  ]
+}
