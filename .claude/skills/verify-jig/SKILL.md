@@ -20,6 +20,7 @@ Read the feature's row before exploring. If a run had to explore or found a row 
 | Hooks | `hooks/`, `scripts/hooks.py` | `tests/test_hooks.py` | `python3 -m unittest tests.test_hooks` |
 | Install, update, release | `install.sh`, `update.sh`, `uninstall.sh`, `release.sh` | `tests/test_update.py`, `tests/test_release.py` | `python3 -m unittest tests.test_update tests.test_release` |
 | Skill references and no-regression | `scripts/skill_refs.py`, `scripts/no_regression.py` | `tests/test_no_regression.py` | `python3 -m unittest tests.test_no_regression` |
+| Website skill groups | `website/src/lib/groups.ts` | `tests/test_website_groups.py` | `python3 -m unittest tests.test_website_groups` (the build's group rule, without Node) |
 | Website | `website/` | the Astro build | see the full suite below |
 
 ## Full end-to-end suite

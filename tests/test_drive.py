@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -8,6 +9,7 @@ import unittest
 
 CORE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DRIVE = os.path.join(CORE, "skills", "implement-spec", "scripts", "drive.py")
+FIXTURES = os.path.join(CORE, "tests", "fixtures", "diagram", "run")
 SETTINGS = {"version": 1, "committed": True, "tracker": {"kind": "github", "tickets": "gh issue view"},
             "checks": "test ! -e broken", "docs": {"glossary": "GLOSSARY.md", "adr": "docs/adr"},
             "runData": ".claude/workflow-runs", "verifySkill": "verify-demo", "implementers": 2,
@@ -26,7 +28,9 @@ def git(*args, cwd):
     return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True, env=ENV).stdout.strip()
 
 
-class DriveTest(unittest.TestCase):
+class RunRepo(unittest.TestCase):
+    """A throwaway repository with workflow settings, and helpers to drive a run in it."""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = os.path.realpath(self.tmp.name)
@@ -71,6 +75,8 @@ class DriveTest(unittest.TestCase):
         self.ok("report", "s1", tid, report)
         return wt
 
+
+class DriveTest(RunRepo):
     def test_tickets_file_problems_are_all_reported(self):
         bad = [{"id": "1", "title": "a", "blockedBy": ["2"]}, {"id": "2", "title": "b", "blockedBy": ["1"]},
                {"id": "3", "title": "c", "blockedBy": ["9"]}, {"id": "3", "title": "d"}]
@@ -259,6 +265,107 @@ class DriveTest(unittest.TestCase):
         self.assertIn("Draft PR:\n  - https://example.test/pr/1", out)
         self.assertIn("Ships with:\n  - run the migration in production", out)
         self.assertNotIn("Open items", out)
+
+
+class DiagramTest(RunRepo):
+    """Plan and proof diagrams: graph files in the run's data folder, and a mismatch stops the merge."""
+
+    def setUp(self):
+        if not shutil.which("node"):
+            self.skipTest("node is not installed: the diagram scripts need Node")
+        super().setUp()
+
+    def graph(self, name):
+        return os.path.join(FIXTURES, name)
+
+    def plan(self, tid="1"):
+        return self.ok("diagram", "s1", "plan", self.graph("current.json"), self.graph("expected.json"),
+                       "--ticket", tid)
+
+    def proof(self, after, tid="1"):
+        return self.drive("diagram", "s1", "proof", self.graph("current.json"), self.graph(after),
+                          "--ticket", tid, "--kind", "call-tree")
+
+    def test_graph_files_are_written_under_the_run_data_folder(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        self.plan()
+        self.assertEqual(self.proof("after-match.json").returncode, 0)
+        self.assertEqual(sorted(f for f in os.listdir(self.runs) if f.startswith("s1-1-")),
+                         ["s1-1-plan.json", "s1-1-pr.md", "s1-1-proof.json"])
+        self.assertEqual(git("status", "--porcelain", "--untracked-files=all", cwd=self.root), "?? tickets.json")
+
+    def test_a_mismatch_stops_the_merge_at_level_2_until_the_proof_matches(self):
+        self.write(".claude/workflow-runs/grades.md", "**Current autonomy level: 2.**\n")
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        wt = self.started_ticket("1")
+        self.plan()
+        before = git("rev-parse", "claude/s1", cwd=self.root)
+        self.assertNotEqual(self.drive("merge", "s1", "1").returncode, 0, "no proof yet")
+        r = self.proof("after-mismatch.json")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("changed edge Start -> Finish: mark removed, now unchanged", r.stdout)
+        for args in (("merge", "s1", "1"), ("merge", "s1", "1", "--approved"), ("checks", "s1", "1")):
+            r = self.drive(*args)
+            self.assertEqual(r.returncode, 1, args)
+            self.assertIn("proof diagram doesn't match the plan diagram", r.stderr + r.stdout)
+        self.assertEqual(git("rev-parse", "claude/s1", cwd=self.root), before)
+        self.assertEqual(self.proof("after-match.json").returncode, 0)
+        self.ok("checks", "s1", "1")
+        self.ok("merge", "s1", "1")
+        self.assertNotEqual(git("rev-parse", "claude/s1", cwd=self.root), before)
+        self.assertTrue(os.path.isdir(wt))
+
+    def test_an_unknown_ticket_is_refused_and_nothing_written(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        r = self.drive("diagram", "s1", "plan", self.graph("current.json"), self.graph("expected.json"), "--ticket", "12x")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no ticket 12x in run s1", r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.runs, "s1-12x-plan.json")))
+
+    def test_no_proof_yet_says_how_to_fix_it(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        self.started_ticket("1")
+        self.plan()
+        r = self.drive("checks", "s1", "1")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("fix the code, or agree a new plan diagram with the developer", r.stderr + r.stdout)
+
+    def test_a_new_plan_drops_the_old_proof(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        self.started_ticket("1")
+        self.plan()
+        self.assertEqual(self.proof("after-match.json").returncode, 0)
+        self.plan()
+        self.assertNotEqual(self.drive("merge", "s1", "1", "--approved").returncode, 0)
+
+    def test_a_ticket_without_a_plan_diagram_merges_as_before(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        self.started_ticket("1")
+        self.ok("merge", "s1", "1", "--approved")
+
+    def test_a_match_writes_the_pr_section_from_the_template(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        self.plan()
+        out = self.proof("after-match.json").stdout
+        line = "Proof diagram matched the plan diagram (call-tree, 1 node added, 2 edges added, 1 group removed, " \
+               "1 node removed, 2 edges removed)"
+        self.assertIn(line, out)
+        with open(os.path.join(self.runs, "s1-1-pr.md")) as f:
+            pr = f.read()
+        self.assertTrue(pr.startswith(line + "\n"), pr)
+        details = re.search(r"<details>\n<summary>[^<]+</summary>\n\n```mermaid\n(.*?)```\n\n</details>", pr, re.S)
+        self.assertIsNotNone(details, pr)
+        self.assertIn('n1["Check"]', details.group(1))
+        self.assertIn("class n1 added", details.group(1))
+
+
+class PrBodyTemplateTest(unittest.TestCase):
+    """The PR body template holds the result line and the merged diagram in a collapsed section."""
+
+    def test_template_has_the_result_line_and_a_collapsed_mermaid_block(self):
+        with open(os.path.join(CORE, "skills", "implement-spec", "references", "pr-body.md")) as f:
+            template = f.read()
+        self.assertRegex(template, r"\{result\}\n\n<details>\n<summary>[^<]+</summary>\n\n\{mermaid\}\n\n</details>")
 
 
 if __name__ == "__main__":

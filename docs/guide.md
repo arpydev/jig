@@ -126,6 +126,7 @@ The steps are `grill`, `domain`, `design`, `spec`, `tickets`, `plan`, `build`, `
 | `to-tickets` | Split a spec, plan or epic into tickets that can run in parallel, with blocking edges, a test per acceptance criterion and the folders each is likely to touch. |
 | `teach` | Learn a topic, a codebase or Jig itself over several sessions. Claude keeps what you know in `~/.claude/teach/<topic>/`, out of every repository, and teaches Jig from its own docs. |
 | `knowledge-map` | Keep an evidence-backed level per area of each project you work on, in `~/.claude/knowledge/<project>.md`. Claude explains more, and checks your understanding before acting or before text goes out under your name, where you don't yet know an area or your evidence has gone stale. `grilling` runs it, and `outbound-guard` warns when outgoing text names such an area. |
+| `track-record` | See your own record across your work repositories as a local page in `~/.claude/report/`: merged PRs, reviews given, rework, knowledge-map breadth and grades, each number linked to its evidence. Also writes a CV-safe snapshot and asks for one line on why each PR mattered. |
 | `tdd`, `diagnosing-bugs`, `prototype`, `triage`, `handoff`, `writing-for-agents`, `research` | Matt Pocock's skills, as he wrote them apart from a few renames. |
 
 ## Grading and autonomy

@@ -1,0 +1,5 @@
+{"type": "user", "timestamp": "2026-01-05T09:00:00Z", "uuid": "u1", "message": {"content": "Plan the export feature."}}
+{"type": "assistant", "timestamp": "2026-01-05T09:01:00Z", "uuid": "a1", "message": {"content": [{"type": "tool_use", "id": "tu1", "name": "Skill", "input": {"skill": "grilling"}}]}}
+{"type": "user", "timestamp": "2026-01-05T10:00:00Z", "uuid": "u2", "message": {"content": "<command-message>ship-it is running</command-message>\n<command-name>/ship-it</command-name>"}}
+{"type": "assistant", "timestamp": "2026-01-05T10:05:00Z", "uuid": "a2", "message": {"content": [{"type": "tool_use", "id": "tu2", "name": "Skill", "input": {"skill": "toolbox:pipeline"}}]}}
+{"type": "user", "timestamp": "2026-01-05T11:00:00Z", "uuid": "u3", "message": {"content": "<command-message>clear is running</command-message>\n<command-name>/clear</command-name>"}}

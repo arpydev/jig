@@ -10,7 +10,7 @@
 # The notes are those titles, oldest first. It shows both and asks before changing anything;
 # --yes skips the question (needed without a terminal), --dry-run stops after showing them.
 # Main must not be behind origin/main. Local commits not yet pushed are pushed with the tag.
-# Then it pushes an annotated tag and creates the GitHub release with gh.
+# Then it pushes an annotated tag and the release branch at it in one atomic push, and runs gh release create.
 # JIG_GH overrides the gh command (used by the tests).
 set -euo pipefail
 
@@ -71,6 +71,10 @@ fi
 
 [ "$ahead" = 0 ] || g push --quiet origin main
 g tag -a "$next" -m "$next"
-g push --quiet origin "$next"
+g push --quiet --atomic origin "$next" "$next^{commit}:refs/heads/release" || {
+  g tag -d "$next" >/dev/null
+  echo "push rejected; nothing reached origin and the local tag $next is removed" >&2
+  exit 1
+}
 (cd "$core" && "$gh" release create "$next" --title "$next" --notes "$notes")
 echo "released  $next"

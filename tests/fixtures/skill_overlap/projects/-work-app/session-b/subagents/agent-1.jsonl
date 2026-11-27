@@ -1,0 +1,1 @@
+{"type": "assistant", "timestamp": "2026-02-01T09:05:00Z", "uuid": "a4", "message": {"content": [{"type": "tool_use", "id": "tu4", "name": "Skill", "input": {"skill": "domain-modeling"}}]}}

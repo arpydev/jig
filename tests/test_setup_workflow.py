@@ -50,6 +50,23 @@ class SettingsTest(Repo):
         for text in ("tracker.site", "tracker.keyPattern", "file not found: missing.md", "skill not installed: nope", "unknown step"):
             self.assertIn(text, r.stdout)
 
+    def test_set_refuses_a_value_that_breaks_the_settings_and_leaves_the_file_unchanged(self):
+        text = json.dumps(dict(GOOD, ast={"typescript": "node_modules/typescript"}))
+        self.write(".claude/workflow.json", text)
+        for key, value, problem in (("ast", "foo", "ast must map"), ("version", "2", "unknown version")):
+            r = self.settings("set", key, value)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn(problem, r.stderr)
+            with open(os.path.join(self.root, ".claude", "workflow.json")) as f:
+                self.assertEqual(f.read(), text)
+
+    def test_set_saves_a_value_that_keeps_the_settings_good(self):
+        self.write(".claude/workflow.json", json.dumps(GOOD))
+        r = self.settings("set", "ast.python", "libcst")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with open(os.path.join(self.root, ".claude", "workflow.json")) as f:
+            self.assertEqual(json.load(f), dict(GOOD, ast={"python": "libcst"}))
+
     def test_driver_settings_are_checked(self):
         bad = dict(GOOD, tracker={"kind": "github", "tickets": " "}, implementers=0, worktreeSetup="")
         self.write(".claude/workflow.json", json.dumps(bad))

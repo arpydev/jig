@@ -4,6 +4,9 @@
 Usage (run from anywhere inside the repository, or pass --repo):
   settings.py path                 print the settings file's path (always in the main checkout)
   settings.py get <dotted.key>     print one value; exit 1 if it is missing
+  settings.py set <dotted.key> <value>
+                                   save a text value, keeping every other setting; refuse it
+                                   when the result fails check
   settings.py check                check the file against the format; exit 1 on any problem
   settings.py exclude              hide the settings and verify skill with .git/info/exclude
                                    (only when "committed" is false; safe to rerun)
@@ -40,9 +43,9 @@ SETTINGS = os.path.join(".claude", "workflow.json")
 RATCHET = os.path.join(os.path.dirname(os.path.realpath(__file__)), "ratchet.py")
 
 
-def fail(msg):
+def fail(msg, code=1):
     print(msg, file=sys.stderr)
-    sys.exit(1)
+    sys.exit(code)
 
 
 def main_checkout(repo):
@@ -146,12 +149,32 @@ def problems(root, s):
     for p in s.get("projectSkills", []):
         if not os.path.isfile(os.path.join(expand(root, p), "SKILL.md")):
             out.append(f"projectSkills: not a skill folder: {p}")
+    ast = s.get("ast", {})
+    if not isinstance(ast, dict) or not all(isinstance(t, str) and t.strip() for t in ast.values()):
+        out.append("ast must map each language to its tool, such as {\"typescript\": \"node_modules/typescript\"}")
     for role, model in s.get("models", {}).items():
         if role not in ROLES:
             out.append(f"models.{role}: unknown role (use one of {', '.join(ROLES)})")
         if model not in MODELS:
             out.append(f"models.{role}: unknown model {model}")
     return out
+
+
+def save(root, s, key, value):
+    *parents, last = key.split(".")
+    v = s
+    for part in parents:
+        v = v.setdefault(part, {})
+        if not isinstance(v, dict):
+            fail(f"{key}: {part} is not an object")
+    v[last] = value
+    out = problems(root, s)
+    if out:
+        fail(f"not saved: {key} {value} would leave these problems:\n" + "\n".join(out))
+    with open(os.path.join(root, SETTINGS), "w") as f:
+        json.dump(s, f, indent=2)
+        f.write("\n")
+    print(f"saved {key}")
 
 
 def never_commit(s):
@@ -240,6 +263,10 @@ def main(argv):
                 fail(f"not set: {argv[1]}")
             v = v[part]
         print(v if isinstance(v, str) else json.dumps(v))
+    elif cmd == "set":
+        if len(argv) < 3:
+            fail("usage: settings.py set <dotted.key> <value>")
+        save(root, s, argv[1], argv[2])
     elif cmd == "check":
         out = problems(root, s)
         for p in out:
