@@ -1,4 +1,5 @@
 """Tests for release.sh, against a throwaway bare origin and a fake gh."""
+import json
 import os
 import shutil
 import subprocess
@@ -30,7 +31,7 @@ class Release(unittest.TestCase):
         shutil.copy2(os.path.join(CORE, "release.sh"), self.core)
         self.commit("Add release.sh")
         self.git(self.core, "tag", "-a", "v1.0.0", "-m", "v1.0.0")
-        self.git(self.core, "push", "-q", "origin", "main", "v1.0.0")
+        self.git(self.core, "push", "-q", "origin", "main", "v1.0.0", "v1.0.0^{commit}:refs/heads/release")
 
     def git(self, cwd, *args):
         return subprocess.run(["git", *args], cwd=cwd, env=self.env, capture_output=True, text=True,
@@ -57,6 +58,31 @@ class Release(unittest.TestCase):
         self.assertEqual(args[:2], ["release", "create"])
         self.assertIn("v1.1.0", args)
         self.assertIn("- Add the status-flow skill\n- Fix a typo in grilling", "\n".join(args))
+
+    def test_release_branch_points_at_the_new_tag(self):
+        self.commit("Add a skill")
+        r = self.release("--yes")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.git(self.origin, "rev-parse", "release"), self.git(self.origin, "rev-parse", "v1.1.0^{commit}"))
+
+    def test_second_release_fast_forwards_release(self):
+        self.commit("Add a skill")
+        self.release("--yes")
+        self.commit("Add another skill")
+        r = self.release("--yes")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.git(self.origin, "rev-parse", "release"), self.git(self.origin, "rev-parse", "v1.2.0^{commit}"))
+
+    def test_never_overwrites_a_release_branch_that_moved_elsewhere(self):
+        other = os.path.join(self.tmp, "other")
+        self.git(self.tmp, "clone", "-q", "-b", "release", self.origin, other)
+        self.git(other, "commit", "-q", "--allow-empty", "-m", "Commit to release by hand")
+        self.git(other, "push", "-q", "origin", "release")
+        moved = self.git(other, "rev-parse", "HEAD")
+        self.commit("Add a skill")
+        r = self.release("--yes")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertEqual(self.git(self.origin, "rev-parse", "release"), moved)
 
     def test_only_fixes_is_a_patch_release(self):
         self.commit("Fix update.sh on a detached HEAD")
@@ -85,6 +111,7 @@ class Release(unittest.TestCase):
         self.assertIn("- Add a skill", r.stdout)
         self.assertNotIn("v1.1.0", self.git(self.core, "tag").split())
         self.assertFalse(os.path.exists(self.gh_log))
+        self.assertEqual(self.git(self.origin, "rev-parse", "release"), self.git(self.origin, "rev-parse", "v1.0.0^{commit}"))
 
     def test_nothing_to_release(self):
         r = self.release("--yes")
@@ -121,6 +148,13 @@ class Release(unittest.TestCase):
         self.commit("Add a skill")
         r = self.release("--dry-run")
         self.assertIn("Release v1.1.0", r.stdout)
+
+
+class WebsiteDeploys(unittest.TestCase):
+    def test_vercel_does_not_deploy_from_main(self):
+        with open(os.path.join(CORE, "website", "vercel.json")) as f:
+            config = json.load(f)
+        self.assertIs(config["git"]["deploymentEnabled"]["main"], False)
 
 
 if __name__ == "__main__":

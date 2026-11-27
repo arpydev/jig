@@ -77,7 +77,7 @@ npm install
 npm run dev
 ```
 
-To host it on Vercel, set the project's root directory to `website`.
+To host it on Vercel, set the project's root directory to `website` and its production branch to `release`. The site deploys from `release`, which `release.sh` moves to each new release's tag, so it shows what `update.sh` installs. Nobody commits to `release` by hand, and `website/vercel.json` turns off deploys from `main`.
 
 ## Licence
 
