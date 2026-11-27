@@ -1,0 +1,16 @@
+{
+  "title": "TicketStatus in keeps-rule.ts",
+  "nodes": [
+    {"id": "Open", "label": "Open"},
+    {"id": "InProgress", "label": "InProgress"},
+    {"id": "Resolved", "label": "Resolved"},
+    {"id": "Closed", "label": "Closed"}
+  ],
+  "edges": [
+    {"from": "Open", "to": "InProgress", "label": "start"},
+    {"from": "InProgress", "to": "Resolved", "label": "resolve"},
+    {"from": "Resolved", "to": "Open", "label": "reopen"},
+    {"from": "Closed", "to": "Open", "label": "reopen"},
+    {"from": "Resolved", "to": "Closed", "label": "close"}
+  ]
+}

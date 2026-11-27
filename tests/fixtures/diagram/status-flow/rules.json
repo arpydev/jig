@@ -1,0 +1,8 @@
+{
+  "start": ["Open"],
+  "flags": {"resolved": ["Resolved"]},
+  "rules": [
+    {"name": "resolved-before-closed", "says": "A ticket is resolved before it is closed", "never": "Closed", "unless": ["resolved"]},
+    {"name": "can-close", "says": "A ticket can be closed", "reach": "Closed"}
+  ]
+}
