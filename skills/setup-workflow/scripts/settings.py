@@ -5,7 +5,8 @@ Usage (run from anywhere inside the repository, or pass --repo):
   settings.py path                 print the settings file's path (always in the main checkout)
   settings.py get <dotted.key>     print one value; exit 1 if it is missing
   settings.py set <dotted.key> <value>
-                                   save a text value, keeping every other setting
+                                   save a text value, keeping every other setting; refuse it
+                                   when the result fails check
   settings.py check                check the file against the format; exit 1 on any problem
   settings.py exclude              hide the settings and verify skill with .git/info/exclude
                                    (only when "committed" is false; safe to rerun)
@@ -148,6 +149,9 @@ def problems(root, s):
     for p in s.get("projectSkills", []):
         if not os.path.isfile(os.path.join(expand(root, p), "SKILL.md")):
             out.append(f"projectSkills: not a skill folder: {p}")
+    ast = s.get("ast", {})
+    if not isinstance(ast, dict) or not all(isinstance(t, str) and t.strip() for t in ast.values()):
+        out.append("ast must map each language to its tool, such as {\"typescript\": \"node_modules/typescript\"}")
     for role, model in s.get("models", {}).items():
         if role not in ROLES:
             out.append(f"models.{role}: unknown role (use one of {', '.join(ROLES)})")
@@ -164,6 +168,9 @@ def save(root, s, key, value):
         if not isinstance(v, dict):
             fail(f"{key}: {part} is not an object")
     v[last] = value
+    out = problems(root, s)
+    if out:
+        fail(f"not saved: {key} {value} would leave these problems:\n" + "\n".join(out))
     with open(os.path.join(root, SETTINGS), "w") as f:
         json.dump(s, f, indent=2)
         f.write("\n")
