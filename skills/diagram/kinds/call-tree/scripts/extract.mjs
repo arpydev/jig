@@ -69,7 +69,7 @@ function extract(ts, program, root, entryFile, entryName) {
   const calleeOf = (call) => {
     let symbol = checker.getSymbolAtLocation(call.expression);
     if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
-    const decl = symbol?.declarations?.[0];
+    const decl = symbol?.declarations?.find((d) => bodyOf(d)) ?? symbol?.declarations?.[0];
     if (!decl || !isFunction(decl)) return undefined;
     const sf = decl.getSourceFile();
     if (program.isSourceFileDefaultLibrary(sf)) return undefined;

@@ -106,6 +106,15 @@ class ExtractTest(FixtureProject):
         graph = self.graph("countDown", file="count.ts")
         self.assertEqual(edges(graph), {("count.ts#countDown", "count.ts#countDown")})
 
+    def test_an_overloaded_function_is_followed_through_its_body(self):
+        self.write("overload.ts", "function tidy(text: string): string;\n"
+                                  "function tidy(text: string[]): string;\n"
+                                  "function tidy(text: string | string[]): string { return trim(String(text)); }\n"
+                                  "function trim(text: string): string { return text.trim(); }\n"
+                                  "export function start(): string { return tidy(\"a\"); }\n")
+        graph = self.graph("start", file="overload.ts")
+        self.assertEqual(edges(graph), {("overload.ts#start", "overload.ts#tidy"), ("overload.ts#tidy", "overload.ts#trim")})
+
     def test_a_method_entry_is_named_class_dot_method(self):
         graph = self.graph("Discounts.apply", file="pricing.ts")
         self.assertEqual(edges(graph), {("pricing.ts#Discounts.apply", "pricing.ts#roundPrice")})
