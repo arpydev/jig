@@ -1,0 +1,13 @@
+{
+  "title": "Planned change",
+  "nodes": [
+    {"id": "draft", "label": "Draft"},
+    {"id": "review", "label": "In review", "mark": "added"},
+    {"id": "published", "label": "Published"}
+  ],
+  "edges": [
+    {"from": "draft", "to": "review", "label": "submit", "mark": "added"},
+    {"from": "review", "to": "published", "label": "approve", "mark": "added"},
+    {"from": "draft", "to": "published", "label": "publish", "mark": "removed"}
+  ]
+}

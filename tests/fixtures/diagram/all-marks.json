@@ -1,0 +1,18 @@
+{
+  "title": "Document workflow",
+  "groups": [
+    {"id": "editing", "label": "Editing", "mark": "unchanged"}
+  ],
+  "nodes": [
+    {"id": "draft", "label": "Draft", "group": "editing"},
+    {"id": "review", "label": "In review", "group": "editing", "mark": "added"},
+    {"id": "published", "label": "Published", "mark": "mismatch"},
+    {"id": "archived", "label": "Archived", "mark": "removed"}
+  ],
+  "edges": [
+    {"from": "draft", "to": "review", "label": "submit", "mark": "added"},
+    {"from": "review", "to": "published", "label": "approve", "mark": "mismatch"},
+    {"from": "draft", "to": "published", "label": "publish"},
+    {"from": "published", "to": "archived", "mark": "removed"}
+  ]
+}

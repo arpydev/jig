@@ -49,6 +49,7 @@ Each script answers one question on demand, so skills don't keep the answer in p
 | `skills/knowledge-map/scripts/knowledge.py` | How well does the developer know the area this work touches, and is their evidence still fresh? |
 | `skills/retro/scripts/lookups.py` | Which lookups did a run repeat that a script could answer? |
 | `skills/ast/scripts/ast_tool.py` | Which AST tool does this repository use for a language? |
+| `skills/diagram/scripts/compare.mjs` | Does the proof diagram match the plan diagram? |
 | `skills/to-tickets/scripts/publish.py` | Are the approved ticket drafts on GitHub, with their blocked-by links? |
 
 ## Releasing
