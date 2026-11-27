@@ -83,6 +83,8 @@ class Release(unittest.TestCase):
         r = self.release("--yes")
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(self.git(self.origin, "rev-parse", "release"), moved)
+        self.assertNotIn("v1.1.0", self.origin_tags())
+        self.assertEqual(self.git(self.core, "tag", "-l", "v1.1.0"), "")
 
     def test_only_fixes_is_a_patch_release(self):
         self.commit("Fix update.sh on a detached HEAD")
