@@ -6,7 +6,8 @@ Usage (from inside the repository, or with --repo):
                 [--dev <letter>] [--notes <text>] [--date YYYY-MM-DD]
       Copy the grader's gates, scores, mean and grade into a new row, word for word.
       Creates the ledger, with autonomy level 0 and the ladder, if there is none.
-      Exits 1, writing nothing, if the report lacks any of Gates, C1 to C7, Mean or Grade.
+      Exits 1, writing nothing, if the report lacks any of Gates, C1 to C7, Mean or Grade,
+      or a score isn't a whole number 0 to 4.
   ledger.py level                 print the current autonomy level
   ledger.py gate <checkpoint>     print go if the current level passes the checkpoint without
                                   waiting for the developer, otherwise wait
@@ -102,7 +103,11 @@ def ledger_path(repo):
 
 
 def parse(report):
-    """The grader's values as written. Missing lines are reported, not guessed."""
+    """The grader's values as written. Missing lines are reported, not guessed.
+
+    The grade file also holds the prompt as sent, whose placeholder lines would match first,
+    so only the text after "## Grader report" is read when that heading is there."""
+    report = report.split("\n## Grader report", 1)[-1]
     found, missing = {}, []
     patterns = {"Gates": r"^Gates:\s*(.+)$"}
     patterns.update({f"C{i}": rf"^C{i}\s+([0-9.]+)\s*:" for i in range(1, 8)})
@@ -115,6 +120,9 @@ def parse(report):
             missing.append(key)
     if missing:
         fail(f"grade report lacks: {', '.join(missing)}")
+    for i in range(1, 8):
+        if found[f"C{i}"] not in {"0", "1", "2", "3", "4"}:
+            fail(f"C{i} is {found[f'C{i}']}; the rubric needs a whole number 0 to 4, so ask the grader again")
     gates = found["Gates"]
     found["Gates"] = "none" if gates.lower().startswith("none") else ", ".join(dict.fromkeys(re.findall(r"\bG[1-9]\b", gates))) or gates
     return found

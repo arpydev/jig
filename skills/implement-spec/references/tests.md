@@ -4,7 +4,7 @@ A test only ever seen passing may just describe the code rather than guard it.
 
 **Pick inputs that isolate the case.** Vary only what the guard depends on and keep everything else equal, so the test can't pass for another reason. Inputs copied from real data often share a prefix, suffix or whole-number part and skip the hard case. A test meant to fail for one guard shouldn't also trip another.
 
-**Break the code and watch tests go red.** Either write the test before the code, or break the behaviour it protects (remove a check, swap an order, change a value), run the tests, then restore the file and show it's identical to a backup. Aim:
+**Write each test before its code and show it red.** The grader looks for that failing run. Then break the code to check the tests you have, old and new: break the behaviour a test protects (remove a check, swap an order, change a value), run the tests, then restore the file and show it's identical to a backup. Aim:
 
 - at least one break at each new test, not just at each behaviour, or narrow tests slip through;
 - at what the change relies on but didn't write (effects, memo dependencies, reset paths);
@@ -14,6 +14,8 @@ A test only ever seen passing may just describe the code rather than guard it.
 
 - a test that never fails under any break: delete it or make it assert something;
 - a behaviour no break catches: add a test.
+
+**Test the path users run.** At least one test runs the code the way the docs tell users to: the documented command, default flags, through the installed (symlinked) location. Test each failure the code handles too: a tool error, an empty or duplicate input, a step that fails half-way. If every test passes explicit flags, the default path is never proven, and that's where reviewers find the defects.
 
 A test that passes only because an older check already holds is a "must not change" test; prove it by breaking that older check.
 

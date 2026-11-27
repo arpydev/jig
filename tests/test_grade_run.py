@@ -15,7 +15,7 @@ REPORT = """Gates: G4 criterion 4 not run. G4 again.
 C1 3: one low defect at a.ts:3
 C2 2: ...
 C3 4: ...
-C4 3.5: grader wrote a half
+C4 3: ...
 C5 3: ...
 C6 2: ...
 C7 4: ...
@@ -59,7 +59,7 @@ class LedgerTest(unittest.TestCase):
             text = f.read()
         self.assertIn("**Current autonomy level: 0.**", text)
         self.assertIn("## Autonomy ladder", text)
-        self.assertIn("| 2026-11-24 | #2 | spec-to-pr | G4 | 3 | 2 | 4 | 3.5 | 3 | 2 | 4 | 3.07 | D |  |  | counted | a \\| b |", text)
+        self.assertIn("| 2026-11-24 | #2 | spec-to-pr | G4 | 3 | 2 | 4 | 3 | 3 | 2 | 4 | 3.07 | D |  |  | counted | a \\| b |", text)
 
     def test_rows_go_in_order_before_level_changes(self):
         self.add("#2")
@@ -77,6 +77,26 @@ class LedgerTest(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("C6, Mean", r.stderr)
         self.assertFalse(os.path.exists(self.ledger))
+
+    def test_reads_the_grader_report_not_the_prompt_saved_above_it(self):
+        both = os.path.join(self.root, "both.md")
+        prompt = "## Prompt as sent\n\nGates: <none, or each gate hit>\nC1 <score>: <evidence>\nMean: <mean>\nGrade: <A if ...>\n\n"
+        with open(both, "w") as f:
+            f.write("# Grade: #2\n\n" + prompt + "## Grader report\n\n" + REPORT)
+        r = self.add(report=both)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with open(self.ledger) as f:
+            self.assertIn("| G4 | 3 | 2 | 4 | 3 | 3 | 2 | 4 | 3.07 | D |", f.read())
+
+    def test_score_that_is_not_a_whole_number_0_to_4_writes_nothing(self):
+        for score in ("3.5", "5"):
+            bad = os.path.join(self.root, "half.md")
+            with open(bad, "w") as f:
+                f.write(REPORT.replace("C2 2: ...", f"C2 {score}: ..."))
+            r = self.add(report=bad)
+            self.assertEqual(r.returncode, 1, score)
+            self.assertIn(f"C2 is {score}", r.stderr)
+            self.assertFalse(os.path.exists(self.ledger))
 
     def test_no_gates_is_none(self):
         clean = os.path.join(self.root, "clean.md")

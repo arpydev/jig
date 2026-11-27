@@ -103,7 +103,7 @@ Read whatever the rubric needs, beyond the files named here. Return this whole r
 
 ## Record the grade
 
-Save the report word for word, then run `ledger.py add <report> --run <run> --mode <mode> --kind <calibration|counted> [--dev <letter>] [--notes <text>]`. It fails, writing nothing, if a score is missing. Fill in the escaped-defects column later (see below).
+Save the report word for word, then run `ledger.py add <report> --run <run> --mode <mode> --kind <calibration|counted> [--dev <letter>] [--notes <text>]`. It reads only the part after `## Grader report`, and fails, writing nothing, if a score is missing or isn't a whole number 0 to 4. Fill in the escaped-defects column later (see below).
 
 ## Check earlier runs for escaped defects
 
