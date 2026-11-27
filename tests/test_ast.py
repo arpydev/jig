@@ -56,10 +56,11 @@ class FindTest(FixtureRepo):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.strip(), "tree-sitter-typescript")
 
-    def test_the_repository_tool_comes_before_the_settings(self):
-        path = self.install("typescript")
+    def test_the_saved_tool_comes_before_a_single_repository_tool(self):
+        self.install("typescript")
         self.settings(ast={"typescript": "tree-sitter-typescript"})
-        self.assertEqual(self.ast("find", "typescript").stdout.strip(), path)
+        r = self.ast("find", "typescript")
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "tree-sitter-typescript"), r.stderr)
 
     def test_two_local_candidates_are_both_listed_and_neither_chosen(self):
         first, second = self.install("typescript"), self.install("ts-morph")

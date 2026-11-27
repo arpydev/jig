@@ -2,10 +2,11 @@
 """Find the AST tool a repository uses for one language.
 
 Usage (run from anywhere inside the repository, or pass --repo):
-  ast_tool.py find <language>      print the tool to use and exit 0. Looks first in the repository
-                                   (its node_modules), then at `ast.<language>` in the project
-                                   settings (a saved path is read from the repository root). Exit 2 with each candidate on its own line when several
-                                   are installed and none is chosen; exit 3 when there is none.
+  ast_tool.py find <language>      print the tool to use and exit 0: `ast.<language>` in the project
+                                   settings when saved (a saved path is read from the repository
+                                   root), else the repository's own tool (its node_modules). Exit 2
+                                   with each candidate on its own line when several are installed
+                                   and none is saved; exit 3 when there is none.
                                    Either way the developer picks; save their pick
   ast_tool.py save <language> <tool>
                                    save the developer's pick as `ast.<language>` in the project
@@ -52,14 +53,14 @@ def chosen(root, language):
 
 
 def find(root, language):
-    found = local(root, language)
-    if len(found) == 1:
-        print(found[0])
-        return
     choice = chosen(root, language)
     if choice:
         in_repo = os.path.join(root, choice)
         print(in_repo if os.path.exists(in_repo) else choice)
+        return
+    found = local(root, language)
+    if len(found) == 1:
+        print(found[0])
         return
     if found:
         print("\n".join(found))

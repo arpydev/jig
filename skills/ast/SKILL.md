@@ -9,7 +9,7 @@ A structural question answered from a syntax tree is exact; grep only guesses. T
 
 ## Find the tool
 
-Run `python3 ~/.claude/skills/ast/scripts/ast_tool.py find <language>` from inside the repository. It looks for the repository's own tool (such as `node_modules/typescript`), then the tool saved as `ast.<language>` in the project settings.
+Run `python3 ~/.claude/skills/ast/scripts/ast_tool.py find <language>` from inside the repository. It returns the tool saved as `ast.<language>` in the project settings; with nothing saved, it looks for the repository's own tool (such as `node_modules/typescript`).
 
 - **Exit 0**: use the tool it prints.
 - **Exit 2**: several tools are installed and none is saved. Show the developer the list it prints, ask which to use, and save their pick.
