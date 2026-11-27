@@ -1,11 +1,13 @@
 """Tests for skills/track-record/scripts/track_record.py, on throwaway repos and fake gh output. All data is fictional."""
 import datetime
 import importlib.util
+import io
 import json
 import os
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 
 CORE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(CORE, "skills", "track-record", "scripts", "track_record.py")
@@ -141,6 +143,25 @@ class Scope(Base):
         commit(repo, "three", "Other Person", "other@example.com", "2026-04-04")
         self.use(FakeGh(emails=["dev@work.example.com", "dev@home.example.com", "dev@work.example.com"]))
         self.assertEqual(tr.my_commits(repo, "acme-fictional/shop", LOGIN), ["2026-03-02", "2026-04-03"])
+
+
+class Failures(Base):
+    def test_a_repository_gh_cannot_read_is_skipped_and_named(self):
+        self.work_repo()
+        make_repo(self.root, "gone", "git@github.com:acme-fictional/gone.git")
+
+        class OneRepoFails(FakeGh):
+            def __call__(self, *args):
+                if any("acme-fictional/gone" in a for a in args):
+                    raise tr.GhError("gh api repos/acme-fictional/gone/commits failed: HTTP 404")
+                return super().__call__(*args)
+
+        self.use(OneRepoFails(emails=["dev@work.example.com"], prs=[pr(1, "2026-03-05")]))
+        err = io.StringIO()
+        with redirect_stderr(err):
+            snap = self.build()
+        self.assertEqual(snap["output"], {"2026-03": {"shop": 1}})
+        self.assertIn("skipped acme-fictional/gone", err.getvalue())
 
 
 class Signals(Base):

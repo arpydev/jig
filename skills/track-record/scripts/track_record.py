@@ -10,7 +10,7 @@ Usage:
 origin owner is not the developer's GitHub login (`gh api user`). The report folder is ~/.claude/report
 (TRACK_RECORD_DIR overrides it), outside every repository. Sources are read live: git, gh, the knowledge
 map through knowledge.py and the grade ledger through ledger.py. The only hand-kept file is impact.md.
-Every gh call goes through gh(), so tests can replace it.
+Every gh call goes through gh(), so tests can replace it. A repository gh can't read is skipped and named on stderr.
 """
 import argparse
 import datetime
@@ -39,12 +39,20 @@ GRADES = ["A", "B", "C", "D", "F"]  # why: the grader never gives an E, so D and
 ORIGIN = re.compile(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?/?$")
 
 
+class GhError(Exception):
+    pass
+
+
 def gh(*args):
     """Run gh and return its JSON output."""
     r = subprocess.run(["gh", *args], capture_output=True, text=True)
     if r.returncode:
-        sys.exit(f"track_record.py: gh {' '.join(args[:2])} failed: {r.stderr.strip()}")
+        raise GhError(f"gh {' '.join(args[:2])} failed: {r.stderr.strip()}")
     return json.loads(r.stdout or "null")
+
+
+def skip(slug, error):
+    print(f"track_record.py: skipped {slug}: {error}", file=sys.stderr)
 
 
 def git(repo, *args):
@@ -134,7 +142,13 @@ def reviews_given(login, projects, since, today):
 
 def collect_prs(root):
     login = gh("api", "user")["login"]
-    return [p for _, slug in work_repos(root, login) for p in merged_prs(slug.split("/")[1], slug, login)]
+    out = []
+    for _, slug in work_repos(root, login):
+        try:
+            out += merged_prs(slug.split("/")[1], slug, login)
+        except GhError as e:
+            skip(slug, e)
+    return out
 
 
 def collect(root, today=None):
@@ -143,9 +157,13 @@ def collect(root, today=None):
     data = {"login": login, "projects": [], "prs": [], "reviews": [], "areas": [], "grades": []}
     for path, slug in work_repos(root, login):
         project = slug.split("/")[1]
-        data["projects"].append({"name": project, "slug": slug, "path": path,
-                                 "commits": my_commits(path, slug, login)})
-        data["prs"] += merged_prs(project, slug, login)
+        try:
+            commits, prs = my_commits(path, slug, login), merged_prs(project, slug, login)
+        except GhError as e:
+            skip(slug, e)
+            continue
+        data["projects"].append({"name": project, "slug": slug, "path": path, "commits": commits})
+        data["prs"] += prs
         data["areas"] += known_areas(project, path)
         data["grades"] += graded_runs(project, path)
     today = today or datetime.date.today()
@@ -518,7 +536,14 @@ def main(argv=None):
         print(f"recorded the impact line for {args.url} in {impact_path()}")
         return
     root = os.path.abspath(args.root or default_root())
-    if args.cmd == "build":
+    try:
+        run(args.cmd, root)
+    except GhError as e:
+        sys.exit(f"track_record.py: {e}")
+
+
+def run(cmd, root):
+    if cmd == "build":
         data = build(root)
         gap = len(missing_from(data["prs"]))
         print(f"wrote {os.path.join(report_dir(), 'report.html')} and snapshot.json: {len(data['projects'])} work "
