@@ -296,6 +296,21 @@ class Snapshot(Base):
         self.assertEqual(snap["impact"], [{"project": "shop", "month": "2026-03", "text": "Cut basket errors for every shopper"}])
 
 
+    def test_an_aliased_repository_name_is_absent_from_the_snapshot(self):
+        repo = self.work_repo()
+        write_map(self.root, "shop", [("Baskets", "can explain")])
+        write_ledger(repo, [("2026-04-01", "#2", "B", "B")])
+        self.use(FakeGh(emails=["dev@work.example.com"], prs=[pr(41, "2026-03-05")]))
+        tr.impact("https://github.com/acme-fictional/shop/pull/41", "Cut checkout errors")
+        os.makedirs(self.out, exist_ok=True)
+        with open(os.path.join(self.out, "aliases.json"), "w") as f:
+            json.dump({"acme-fictional/shop": "retail site"}, f)
+        snap = self.build()
+        self.assertNotIn("shop", json.dumps(snap))
+        self.assertEqual(snap["output"], {"2026-03": {"retail site": 1}})
+        self.assertEqual(snap["areas"][0]["project"], "retail site")
+
+
 class Page(Base):
     def test_page_is_self_contained_with_inline_svg_and_every_pr_linked(self):
         repo = self.work_repo()

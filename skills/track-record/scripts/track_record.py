@@ -277,18 +277,31 @@ def missing(root):
     return missing_from(collect_prs(root))
 
 
+def aliases(projects):
+    """{project name: neutral name} from aliases.json in the report folder, which maps owner/name to a neutral name."""
+    path = os.path.join(report_dir(), "aliases.json")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        by_slug = {k.lower(): v for k, v in json.load(f).items()}
+    return {p["name"]: by_slug[p["slug"].lower()] for p in projects if p["slug"].lower() in by_slug}
+
+
 def snapshot(data):
     """The CV-safe part: counts per month per project, area names, levels, grades and impact lines.
-    No PR titles, URLs, ticket keys, other people's names or code."""
+    No PR titles, URLs, ticket keys, other people's names or code. Project names go through aliases()."""
+    names = aliases(data["projects"])
+    prs, reviews, areas, grades = ([dict(i, project=names.get(i["project"], i["project"])) for i in data[k]]
+                                   for k in ("prs", "reviews", "areas", "grades"))
     have = impact_lines()
-    return {"areas": [{"project": a["project"], "area": a["area"], "level": a["level"]} for a in data["areas"]],
+    return {"areas": [{"project": a["project"], "area": a["area"], "level": a["level"]} for a in areas],
             "impact": [{"project": p["project"], "month": p["merged"][:7], "text": have[p["url"]]}
-                       for p in sorted(data["prs"], key=lambda p: p["merged"]) if p["url"] in have],
-            "output": per_month(data["prs"], "merged"), "reviews": per_month(data["reviews"], "date"),
-            "quality": quality(data["prs"]),
+                       for p in sorted(prs, key=lambda p: p["merged"]) if p["url"] in have],
+            "output": per_month(prs, "merged"), "reviews": per_month(reviews, "date"),
+            "quality": quality(prs),
             "grades": [{"date": g["date"], "project": g["project"], "grade": g["grade"], "dev": g["dev"]}
-                       for g in sorted(data["grades"], key=lambda g: g["date"])],
-            "agreement": agreement(data["grades"])}
+                       for g in sorted(grades, key=lambda g: g["date"])],
+            "agreement": agreement(grades)}
 
 
 # why: the dataviz skill's validated palette (light, dark); the slot order is what keeps adjacent hues apart
@@ -454,13 +467,12 @@ def pr_list(prs, anchor, label):
 
 
 def render(data, today):
-    snap = snapshot(data)
     slots, keys = colours([p["name"] for p in data["projects"]])
-    q = snap["quality"]
+    q = quality(data["prs"])
     reworked = [p for p in data["prs"] if p["rework"]]
     changes = [p for p in data["prs"] if p["changes_requested"]]
     b = breadth(data)
-    agree = snap["agreement"]
+    agree = agreement(data["grades"])
     have = impact_lines()
     rate = f"{round(q['rework_rate'] * 100)}%" if q["rework_rate"] is not None else "n/a"
     parts = [
@@ -470,9 +482,9 @@ def render(data, today):
                   if p["commits"] else "") for i, p in enumerate(data["projects"])) + ". Every number links to its evidence. "
         "The snapshot (snapshot.json) keeps only counts, area names, levels, grades and impact lines.</p>",
         f"<h2>Output{tag(True)}</h2><p>Merged PRs per month, stacked by project.</p>",
-        legend(keys), stacked_bars(snap["output"], slots, "merged PRs"), month_table(data["prs"], "merged", "merged PR"),
+        legend(keys), stacked_bars(per_month(data["prs"], "merged"), slots, "merged PRs"), month_table(data["prs"], "merged", "merged PR"),
         f"<h2>Reviewing{tag(True)}</h2><p>Reviews given on other people's PRs, dated by each review.</p>",
-        legend(keys), stacked_bars(snap["reviews"], slots, "reviews"), month_table(data["reviews"], "date", "review"),
+        legend(keys), stacked_bars(per_month(data["reviews"], "date"), slots, "reviews"), month_table(data["reviews"], "date", "review"),
         f"<h2>Quality{tag(True)}</h2><p>Rework is a PR with commits pushed after its first review, "
         "out of the PRs that had a review.</p><div class=\"tiles\">"
         f'<div class="tile"><a class="value" href="#reworked">{rate}</a><span class="label">rework rate '

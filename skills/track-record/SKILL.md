@@ -33,4 +33,4 @@ Left out on purpose: time to merge (it measures reviewers), lines and commit cou
 
 ## The snapshot
 
-`snapshot.json` is rewritten on each run so the record outlives access to an employer's repositories. It holds only counts per month per project, area names, levels, grades and impact lines: no PR titles, URLs, ticket keys, other people's names, partner names or code. Impact lines go in it word for word, so keep them free of those too; the page marks which parts are in it.
+`snapshot.json` is rewritten on each run so the record outlives access to an employer's repositories. It holds only counts per month per project, area names, levels, grades and impact lines: no PR titles, URLs, ticket keys, other people's names, partner names or code. Impact lines go in it word for word, so keep them free of those too; the page marks which parts are in it. Project names are repository names; when one names a partner, map its `owner/repo` to a neutral name in `~/.claude/report/aliases.json` (for example `{"acme/partnerco-shop": "retail site"}`) and the snapshot uses that name.
