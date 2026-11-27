@@ -41,6 +41,15 @@ For every run that explored, whether or not it changed code, **count the lookups
 
 Alongside the pruning pass, look across runs rather than at this one: `<runData>/grades.md` (which criteria keep scoring low, especially C7), the "Worth exploring" architecture notes (an area that keeps coming up), `<runData>/learnings/`, `<runData>/lookups.md` (questions close to the threshold, and scripts no run used, per `references/lookups.md`), and the tech-debt issues raised. Propose at most one longer-term item: a tech-debt issue or epic, an ADR, or a change to how the workflow works. The developer decides whether it goes ahead.
 
+Then look for a skill overlap: run the `writing-for-agents` skill's `scripts/skill_overlap.py` (`python3 -I ~/.claude/skills/writing-for-agents/scripts/skill_overlap.py`). Read its pairs, and its rows for skills nothing loads and nobody used, and propose at most one merge or removal, approved like any other retro change. Plugin skills are read-only. When the developer approves merging skill B into skill A:
+
+1. Copy both skills' folders to `$TMPDIR` before editing anything.
+2. Fold what B does that A doesn't into A, then delete B's folder and, in the core, its entry in `website/src/lib/groups.ts`.
+3. Write a config with `"old"` set to the two copies and `"new"` to A's folder, run `python3 <core>/scripts/no_regression.py <config>` (`<core>` is the repository two folders up from the real path of `~/.claude/skills/retro`), and show the developer every line of B and of the old A that didn't survive, so each loss is chosen rather than missed.
+4. Keep B as an alias skill (it only loads A, and only the developer can start it) only if the developer says they still type `/B`.
+
+An approved removal deletes the skill's folder and its group entry the same way.
+
 ## The retro
 
 Read the friction log and the session, then present candidates to the developer, most costly first. For each one give:

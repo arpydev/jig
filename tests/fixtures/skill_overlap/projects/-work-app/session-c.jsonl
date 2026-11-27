@@ -1,0 +1,3 @@
+{"type": "user", "timestamp": "2026-01-05T09:00:00Z", "uuid": "u1", "message": {"content": "Plan the export feature."}}
+{"type": "assistant", "timestamp": "2026-01-05T09:01:00Z", "uuid": "a1", "message": {"content": [{"type": "tool_use", "id": "tu1", "name": "Skill", "input": {"skill": "grilling"}}]}}
+{"type": "user", "timestamp": "2026-03-01T09:00:00Z", "uuid": "u9", "message": {"content": "Carry on."}}
