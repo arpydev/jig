@@ -1,0 +1,12 @@
+{
+  "title": "Calls from start in flow.ts",
+  "nodes": [
+    {"id": "start", "label": "Start"},
+    {"id": "check", "label": "Check"},
+    {"id": "finish", "label": "Finish"}
+  ],
+  "edges": [
+    {"from": "start", "to": "check"},
+    {"from": "check", "to": "finish"}
+  ]
+}

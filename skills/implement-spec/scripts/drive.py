@@ -29,6 +29,12 @@ agent is needed. Run from anywhere inside the repository (or pass --repo). <spec
                                              open or ships); `status` prints it
   drive.py status <spec>                     where the run stands: the handoff for a new session
   drive.py cleanup <spec>                    remove the run's worktrees once grading is done
+  drive.py diagram <spec> plan <current.json> <expected.json> [--ticket <t>]
+                                             write the plan diagram's graph (current and expected
+                                             merged); a new plan drops the old proof
+  drive.py diagram <spec> proof <before.json> <after.json> --kind <kind> [--ticket <t>]
+                                             write the proof diagram's graph and check it against
+                                             the plan; on a match, write the PR's diagram section
 
 A tickets file is a JSON list of {"id", "title", "blockedBy": [ids], "touches": [paths]}.
 "touches" is the ticket's "Likely to touch" list; tickets whose paths overlap run one after the
@@ -36,7 +42,9 @@ other, and a ticket with no paths runs alone. `tickets --check` warns about both
 
 Files, all in <runData>/runs/: <spec>-state.json (the state), <spec>-agents.md (written from the
 state), <spec>-decisions.md (the decision log), <spec>-checks-<where>.log (full check output),
-and <spec>.md (the friction log the retro reads, started by `start`).
+<spec>.md (the friction log the retro reads, started by `start`), and <spec>[-<ticket>]-plan.json,
+-proof.json and -pr.md (the diagrams). While a ticket has a plan diagram, `checks` and `merge` fail until
+its proof diagram matches, at every autonomy level.
 """
 import argparse
 import datetime
@@ -50,6 +58,8 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 SKILLS = os.path.dirname(os.path.dirname(HERE))
 SETTINGS = os.path.join(SKILLS, "setup-workflow", "scripts", "settings.py")
 LEDGER = os.path.join(SKILLS, "grade-run", "scripts", "ledger.py")
+DIAGRAM = os.path.join(SKILLS, "diagram", "scripts")
+PR_BODY = os.path.join(os.path.dirname(HERE), "references", "pr-body.md")
 STEPS = {
     "explore": "2: exploration subagent (optional)",
     "tickets": "4-6: implement and merge every ticket",
@@ -418,7 +428,92 @@ def cmd_checks(run, tid):
     ok, log, tail = run_checks(run, cwd, where)
     print("\n".join(tail))
     print(f"\nchecks {'passed' if ok else 'FAILED'} in {cwd}; full output in {log}")
-    sys.exit(0 if ok else 1)
+    problem = diagram_problem(run, tid) if tid else None
+    if problem:
+        print(problem, file=sys.stderr)
+    sys.exit(0 if ok and not problem else 1)
+
+
+def node(script, *args):
+    return subprocess.run(["node", os.path.join(DIAGRAM, script), *args], capture_output=True, text=True)
+
+
+def diagram_files(run, tid):
+    prefix = f"{tid}-" if tid else ""
+    return tuple(run.file(f"{prefix}{name}") for name in ("plan.json", "proof.json", "pr.md"))
+
+
+def merge_graphs(before, after, out):
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    r = node("merge.mjs", before, after, out)
+    if r.returncode:
+        fail(r.stderr.strip(), 2)
+
+
+def compare_graphs(plan, proof):
+    r = node("compare.mjs", plan, proof)
+    if r.returncode not in (0, 1):
+        fail(r.stderr.strip(), 2)
+    return r.stdout.strip().splitlines()
+
+
+def diagram_problem(run, tid):
+    plan, proof, _ = diagram_files(run, tid)
+    if not os.path.exists(plan):
+        return None
+    fix = f"fix the code, or agree a new plan diagram with the developer (`drive.py diagram {run.spec} plan`)"
+    if not os.path.exists(proof):
+        return f"the proof diagram doesn't match the plan diagram: there is none yet (`drive.py diagram {run.spec} proof`)"
+    lines = compare_graphs(plan, proof)
+    if lines:
+        return "the proof diagram doesn't match the plan diagram:\n  " + "\n  ".join(lines) + f"\nThen {fix}."
+    return None
+
+
+def change_summary(graph_path):
+    with open(graph_path) as f:
+        graph = json.load(f)
+    parts = []
+    for mark in ("added", "removed"):
+        for kind, key in (("group", "groups"), ("node", "nodes"), ("edge", "edges")):
+            n = sum(item.get("mark") == mark for item in graph.get(key, []))
+            if n:
+                parts.append(f"{n} {kind}{'s' if n > 1 else ''} {mark}")
+    return ", ".join(parts) or "no changes"
+
+
+def cmd_diagram(run, which, first, second, tid, kind):
+    plan, proof, pr = diagram_files(run, tid)
+    if which == "plan":
+        merge_graphs(first, second, plan)
+        for stale in (proof, pr):
+            if os.path.exists(stale):
+                os.remove(stale)
+        print(f"plan diagram graph: {plan}\nShow it with the plan: "
+              f"`node {os.path.join(DIAGRAM, 'render.mjs')} {plan} <out.html>`")
+        return
+    if not kind:
+        fail("a proof needs --kind <kind>, for the PR's result line")
+    if not os.path.exists(plan):
+        fail(f"no plan diagram for this {'ticket' if tid else 'run'}: write one with `drive.py diagram {run.spec} plan`")
+    merge_graphs(first, second, proof)
+    lines = compare_graphs(plan, proof)
+    if lines:
+        if os.path.exists(pr):
+            os.remove(pr)
+        print("Proof diagram does NOT match the plan diagram:\n  " + "\n  ".join(lines))
+        print("This stops the ticket like a failing test, at every autonomy level: fix the code, or agree a new "
+              f"plan diagram with the developer and run `drive.py diagram {run.spec} plan` again.")
+        sys.exit(1)
+    result = f"Proof diagram matched the plan diagram ({kind}, {change_summary(proof)})"
+    r = node("mermaid.mjs", proof)
+    if r.returncode:
+        fail(r.stderr.strip(), 2)
+    with open(PR_BODY) as f:
+        section = f.read().replace("{result}", result).replace("{mermaid}", r.stdout.strip())
+    with open(pr, "w") as f:
+        f.write(section)
+    print(f"{result}\nPR body section: {pr}")
 
 
 def gate(run, checkpoint, what):
@@ -436,6 +531,9 @@ def cmd_merge(run, tid, approved):
     t = run.ticket(tid)
     if t["status"] not in ("pass", "conflict"):
         fail(f"ticket {tid} is {t['status']}; only a PASS ticket merges")
+    problem = diagram_problem(run, tid)
+    if problem:
+        fail(f"{tid} can't merge, at any autonomy level: {problem}")
     if not approved and gate(run, "merge", f"merge {tid}") != "go":
         fail(f"autonomy level {run.level()}: show the developer ticket {tid}, its report ({t['report']}) and "
              f"`git diff --stat {t['baseCommit'][:7]}...{t['branch']}`, then run "
@@ -587,6 +685,13 @@ def main(argv):
     c.add_argument("spec")
     c.add_argument("kind")
     c.add_argument("text")
+    c = sub.add_parser("diagram")
+    c.add_argument("spec")
+    c.add_argument("which", choices=["plan", "proof"])
+    c.add_argument("first")
+    c.add_argument("second")
+    c.add_argument("--ticket")
+    c.add_argument("--kind")
     c = sub.add_parser("skip")
     c.add_argument("spec")
     c.add_argument("step")
@@ -635,6 +740,8 @@ def main(argv):
         cmd_status(run)
     elif args.cmd == "cleanup":
         cmd_cleanup(run)
+    elif args.cmd == "diagram":
+        cmd_diagram(run, args.which, args.first, args.second, args.ticket, args.kind)
 
 
 if __name__ == "__main__":

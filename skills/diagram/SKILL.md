@@ -20,6 +20,7 @@ Each kind adds a line here: what it draws and the command that extracts its grap
 
 - **Draw**: `node ~/.claude/skills/diagram/scripts/render.mjs <graph.json> <out.html>` writes one self-contained HTML page with the diagram and the list of differences under it. Open it in the file panel.
 - **Check**: `node ~/.claude/skills/diagram/scripts/compare.mjs <plan.json> <proof.json>` exits 0 when the proof graph matches the plan graph, and 1 with one line per missing, extra or changed group, node or edge.
+- **Merge**: `node ~/.claude/skills/diagram/scripts/merge.mjs <before.json> <after.json> <out.json>` writes one graph with what after adds marked `added` and what it drops marked `removed`. The plan graph is the current and expected graphs merged; the proof graph is the current and real graphs merged.
 - **Pull request**: `node ~/.claude/skills/diagram/scripts/mermaid.mjs <graph.json>` prints a Mermaid block to paste into the body, which GitHub draws.
 
 Every script exits 2 and names the problem when a graph file doesn't hold together.

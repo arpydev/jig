@@ -58,6 +58,20 @@ export function edgeKey(edge) {
   return `${edge.from} -> ${edge.to}`;
 }
 
+export const SECTIONS = [
+  ["group", "groups", (g) => g.id, ["label", "mark"]],
+  ["node", "nodes", (n) => n.id, ["label", "group", "mark"]],
+  ["edge", "edges", edgeKey, ["label", "mark"]],
+];
+
+export function pair(left, right, key, idOf) {
+  const lefts = new Map(left[key].map((item) => [idOf(item), item]));
+  const rights = new Map(right[key].map((item) => [idOf(item), item]));
+  const pairs = [...rights].map(([id, item]) => [id, lefts.get(id), item]);
+  for (const [id, item] of lefts) if (!rights.has(id)) pairs.push([id, item, undefined]);
+  return pairs;
+}
+
 export function describe(graph, kind, item) {
   if (kind === "edge") {
     const name = (id) => graph.nodes.find((n) => n.id === id).label;

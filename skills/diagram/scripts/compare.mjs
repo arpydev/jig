@@ -1,25 +1,18 @@
-import { GraphError, describe, edgeKey, loadGraph, runCli } from "./graph.mjs";
-
-const SECTIONS = [
-  ["group", "groups", (g) => g.id, ["label", "mark"]],
-  ["node", "nodes", (n) => n.id, ["label", "group", "mark"]],
-  ["edge", "edges", edgeKey, ["label", "mark"]],
-];
+import { GraphError, SECTIONS, describe, loadGraph, pair, runCli } from "./graph.mjs";
 
 function compare(plan, proof) {
   const lines = [];
   for (const [kind, key, idOf, fields] of SECTIONS) {
-    const planned = new Map(plan[key].map((item) => [idOf(item), item]));
-    const proven = new Map(proof[key].map((item) => [idOf(item), item]));
-    for (const [id, item] of planned) {
-      if (!proven.has(id)) lines.push(`missing ${describe(plan, kind, item)}`);
+    const pairs = pair(plan, proof, key, idOf);
+    for (const [, before, item] of pairs) {
+      if (!item) lines.push(`missing ${describe(plan, kind, before)}`);
     }
-    for (const [id, item] of proven) {
-      if (!planned.has(id)) {
+    for (const [, before, item] of pairs) {
+      if (!item) continue;
+      if (!before) {
         lines.push(`extra ${describe(proof, kind, item)}`);
         continue;
       }
-      const before = planned.get(id);
       const changes = fields
         .filter((f) => (before[f] ?? "") !== (item[f] ?? ""))
         .map((f) => `${f} ${before[f] ?? "(none)"}, now ${item[f] ?? "(none)"}`);

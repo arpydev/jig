@@ -1,0 +1,13 @@
+{
+  "title": "Calls from start in flow.ts",
+  "groups": [{"id": "old", "label": "Old"}],
+  "nodes": [
+    {"id": "start", "label": "Start"},
+    {"id": "finish", "label": "Finish"},
+    {"id": "legacy", "label": "Legacy", "group": "old"}
+  ],
+  "edges": [
+    {"from": "start", "to": "finish"},
+    {"from": "finish", "to": "legacy"}
+  ]
+}

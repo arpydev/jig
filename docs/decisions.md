@@ -106,6 +106,12 @@ At every level, each decision made without asking adds a line to the run's decis
 
 **Why:** unattended work stays reviewable, and the grader can tell a chosen skip from a forgotten one.
 
+### Diagrams prove the work and then go
+
+When a diagram kind covers a change, Claude draws a plan diagram before building and checks a proof diagram read from the code once it works. A mismatch stops that agent at every autonomy level, like a failing test, until the code is fixed or the developer agrees a new plan diagram. The graph files live in the run's data folder, never in the repository; only the result line and the merged diagram reach the PR.
+
+**Why:** a mechanical check that the work matches the agreed plan earns trust in unattended runs with several agents, and diagrams kept in the repository would go stale.
+
 ### Outward actions always wait
 
 Posting a comment, creating an issue or opening a pull request needs the developer's yes, at every level. Hooks ask for it too.

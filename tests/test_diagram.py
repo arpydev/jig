@@ -133,6 +133,55 @@ class CompareTest(NodeTest):
                          r.stderr)
 
 
+class MergeTest(NodeTest):
+    """merge.mjs writes one graph from a before and an after graph, marking what was added and removed."""
+
+    def test_before_and_after_merge_with_added_and_removed_marked(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = os.path.join(d, "plan.json")
+            r = node("merge.mjs", fixture("run/current.json"), fixture("run/expected.json"), out)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            with open(out) as f:
+                merged = json.load(f)
+        self.assertEqual(merged, {
+            "title": "Calls from start in flow.ts",
+            "groups": [{"id": "old", "label": "Old", "mark": "removed"}],
+            "nodes": [
+                {"id": "start", "label": "Start", "mark": "unchanged"},
+                {"id": "check", "label": "Check", "mark": "added"},
+                {"id": "finish", "label": "Finish", "mark": "unchanged"},
+                {"id": "legacy", "label": "Legacy", "group": "old", "mark": "removed"},
+            ],
+            "edges": [
+                {"from": "start", "to": "check", "label": "", "mark": "added"},
+                {"from": "check", "to": "finish", "label": "", "mark": "added"},
+                {"from": "start", "to": "finish", "label": "", "mark": "removed"},
+                {"from": "finish", "to": "legacy", "label": "", "mark": "removed"},
+            ],
+        })
+
+    def test_marks_in_the_inputs_are_ignored(self):
+        with tempfile.TemporaryDirectory() as d:
+            before = os.path.join(d, "before.json")
+            with open(before, "w") as f:
+                json.dump({"nodes": [{"id": "a", "mark": "added"}]}, f)
+            out = os.path.join(d, "merged.json")
+            r = node("merge.mjs", before, before, out)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            with open(out) as f:
+                self.assertEqual(json.load(f)["nodes"], [{"id": "a", "label": "a", "mark": "unchanged"}])
+
+    def test_merged_plan_and_proof_compare(self):
+        with tempfile.TemporaryDirectory() as d:
+            plan, match, miss = (os.path.join(d, n) for n in ("plan.json", "match.json", "miss.json"))
+            for after, out in ((fixture("run/expected.json"), plan), (fixture("run/after-match.json"), match),
+                               (fixture("run/after-mismatch.json"), miss)):
+                self.assertEqual(node("merge.mjs", fixture("run/current.json"), after, out).returncode, 0)
+            self.assertEqual(node("compare.mjs", plan, match).returncode, 0)
+            r = node("compare.mjs", plan, miss)
+        self.assertEqual((r.returncode, r.stdout), (1, "changed edge Start -> Finish: mark removed, now unchanged\n"))
+
+
 class MermaidTest(NodeTest):
     """mermaid.mjs writes a graph as a Mermaid block for a pull request body."""
 
