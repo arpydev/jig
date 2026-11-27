@@ -463,7 +463,8 @@ def diagram_problem(run, tid):
         return None
     fix = f"fix the code, or agree a new plan diagram with the developer (`drive.py diagram {run.spec} plan`)"
     if not os.path.exists(proof):
-        return f"the proof diagram doesn't match the plan diagram: there is none yet (`drive.py diagram {run.spec} proof`)"
+        return (f"the proof diagram doesn't match the plan diagram: there is none yet "
+                f"(`drive.py diagram {run.spec} proof`). If it then differs, {fix}.")
     lines = compare_graphs(plan, proof)
     if lines:
         return "the proof diagram doesn't match the plan diagram:\n  " + "\n  ".join(lines) + f"\nThen {fix}."
@@ -483,6 +484,9 @@ def change_summary(graph_path):
 
 
 def cmd_diagram(run, which, first, second, tid, kind):
+    if tid:
+        run.load()
+        run.ticket(tid)
     plan, proof, pr = diagram_files(run, tid)
     if which == "plan":
         merge_graphs(first, second, plan)

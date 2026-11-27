@@ -315,6 +315,21 @@ class DiagramTest(RunRepo):
         self.assertNotEqual(git("rev-parse", "claude/s1", cwd=self.root), before)
         self.assertTrue(os.path.isdir(wt))
 
+    def test_an_unknown_ticket_is_refused_and_nothing_written(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        r = self.drive("diagram", "s1", "plan", self.graph("current.json"), self.graph("expected.json"), "--ticket", "12x")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no ticket 12x in run s1", r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.runs, "s1-12x-plan.json")))
+
+    def test_no_proof_yet_says_how_to_fix_it(self):
+        self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
+        self.started_ticket("1")
+        self.plan()
+        r = self.drive("checks", "s1", "1")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("fix the code, or agree a new plan diagram with the developer", r.stderr + r.stdout)
+
     def test_a_new_plan_drops_the_old_proof(self):
         self.ok("start", "s1", "--tickets", self.tickets, "--base", "main")
         self.started_ticket("1")
