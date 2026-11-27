@@ -33,6 +33,7 @@ Each repository has one `.claude/workflow.json` in its main checkout. Core skill
 | `verifySkill` | The project's verification skill. |
 | `models` | Optional overrides of the core's model per role: `session`, `sonnet`, `opus` or `haiku`. The roles and their defaults are in `ROLES` in `settings.py`; skills read them with `settings.py model <role>`. |
 | `projectSkills` | Optional. Pack skills this repository uses, as paths to their folders. `settings.py link` links them into `.claude/skills`. A pack names them in its `pack.json`, and `install.sh` doesn't install them for every repository. |
+| `ast` | Optional. The AST tool chosen for each language, such as `{"typescript": "node_modules/typescript"}`. The `ast` skill saves it with `settings.py set ast.<language> <tool>`. |
 | `steps` | Optional step additions, below. |
 
 ## Step additions

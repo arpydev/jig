@@ -4,6 +4,8 @@
 Usage (run from anywhere inside the repository, or pass --repo):
   settings.py path                 print the settings file's path (always in the main checkout)
   settings.py get <dotted.key>     print one value; exit 1 if it is missing
+  settings.py set <dotted.key> <value>
+                                   save a text value, keeping every other setting
   settings.py check                check the file against the format; exit 1 on any problem
   settings.py exclude              hide the settings and verify skill with .git/info/exclude
                                    (only when "committed" is false; safe to rerun)
@@ -154,6 +156,20 @@ def problems(root, s):
     return out
 
 
+def save(root, s, key, value):
+    *parents, last = key.split(".")
+    v = s
+    for part in parents:
+        v = v.setdefault(part, {})
+        if not isinstance(v, dict):
+            fail(f"{key}: {part} is not an object")
+    v[last] = value
+    with open(os.path.join(root, SETTINGS), "w") as f:
+        json.dump(s, f, indent=2)
+        f.write("\n")
+    print(f"saved {key}")
+
+
 def never_commit(s):
     if s.get("committed"):
         return []
@@ -240,6 +256,10 @@ def main(argv):
                 fail(f"not set: {argv[1]}")
             v = v[part]
         print(v if isinstance(v, str) else json.dumps(v))
+    elif cmd == "set":
+        if len(argv) < 3:
+            fail("usage: settings.py set <dotted.key> <value>")
+        save(root, s, argv[1], argv[2])
     elif cmd == "check":
         out = problems(root, s)
         for p in out:
