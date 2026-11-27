@@ -80,41 +80,81 @@ function extract(ts, sf, typeName, field) {
     return true;
   };
 
+  const S = ts.SyntaxKind;
+  const EQUAL = [S.EqualsEqualsEqualsToken, S.EqualsEqualsToken];
+  const NOT_EQUAL = [S.ExclamationEqualsEqualsToken, S.ExclamationEqualsToken];
+  const comparison = (node) => {
+    if (ts.isBinaryExpression(node) && [...EQUAL, ...NOT_EQUAL].includes(node.operatorToken.kind)) {
+      const state = (isField(node.left) && stateOf(node.right)) || (isField(node.right) && stateOf(node.left));
+      return state && { states: [state], equal: EQUAL.includes(node.operatorToken.kind) };
+    }
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "includes") {
+      const list = strip(node.expression.expression);
+      if (ts.isArrayLiteralExpression(list) && node.arguments.length === 1 && isField(node.arguments[0])) {
+        return { states: list.elements.map(stateOf).filter(Boolean), equal: true };
+      }
+    }
+    return undefined;
+  };
+  const branchStates = (e, equal = true, out = { then: new Set(), otherwise: new Set() }) => {
+    e = strip(e);
+    if (ts.isPrefixUnaryExpression(e) && e.operator === S.ExclamationToken) return branchStates(e.operand, !equal, out);
+    if (ts.isBinaryExpression(e) && [S.BarBarToken, S.AmpersandAmpersandToken].includes(e.operatorToken.kind)) {
+      branchStates(e.left, equal, out);
+      return branchStates(e.right, equal, out);
+    }
+    const found = comparison(e);
+    if (found) for (const st of found.states) out[found.equal === equal ? "then" : "otherwise"].add(st);
+    return out;
+  };
+  const exits = (statement) => {
+    const last = ts.isBlock(statement) ? statement.statements.at(-1) : statement;
+    return Boolean(last) && (ts.isThrowStatement(last) || ts.isReturnStatement(last));
+  };
+
   const readFunction = (name, body) => {
-    const from = new Set();
-    const to = new Set();
-    const walk = (node) => {
+    const loose = new Set();
+    const unpaired = new Set();
+    const assign = (active, t) => {
+      if (active.size) active.forEach((f) => addEdge(f, t, name));
+      else unpaired.add(t);
+    };
+    const readBlock = (statements, active) => {
+      for (const statement of statements) {
+        if (ts.isIfStatement(statement)) {
+          const { then, otherwise } = branchStates(statement.expression);
+          walk(statement.thenStatement, then.size ? then : active);
+          if (statement.elseStatement) walk(statement.elseStatement, otherwise.size ? otherwise : active);
+          if (exits(statement.thenStatement) && otherwise.size) active = otherwise;
+          continue;
+        }
+        walk(statement, active);
+      }
+    };
+    const walk = (node, active) => {
       if (node !== body && ts.isFunctionLike(node)) return;
+      if (ts.isBlock(node) || ts.isSourceFile(node)) return readBlock(node.statements, active);
+      if (ts.isIfStatement(node)) return readBlock([node], active);
       if (ts.isSwitchStatement(node) && isField(node.expression)) {
         let falling = [];
         for (const clause of node.caseBlock.clauses) {
           if (ts.isCaseClause(clause) && stateOf(clause.expression)) falling.push(stateOf(clause.expression));
           if (!clause.statements.length) continue;
-          for (const s of clause.statements) collectTo(s, (t) => falling.forEach((f) => addEdge(f, t, name)));
+          readBlock(clause.statements, new Set(falling));
           falling = [];
         }
         return;
       }
-      if (ts.isBinaryExpression(node)) {
-        const op = node.operatorToken.kind;
-        const S = ts.SyntaxKind;
-        if ([S.EqualsEqualsEqualsToken, S.ExclamationEqualsEqualsToken, S.EqualsEqualsToken, S.ExclamationEqualsToken].includes(op)) {
-          if (isField(node.left) && stateOf(node.right)) from.add(stateOf(node.right));
-          if (isField(node.right) && stateOf(node.left)) from.add(stateOf(node.left));
-        }
-      }
-      if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "includes") {
-        const list = strip(node.expression.expression);
-        if (ts.isArrayLiteralExpression(list) && node.arguments.length === 1 && isField(node.arguments[0])) {
-          for (const e of list.elements) if (stateOf(e)) from.add(stateOf(e));
-        }
-      }
-      collectTo(node, (t) => to.add(t), true);
-      ts.forEachChild(node, walk);
+      comparison(node)?.states.forEach((st) => loose.add(st));
+      collectTo(node, (t) => assign(active, t), true);
+      ts.forEachChild(node, (child) => walk(child, active));
     };
-    walk(body);
-    if (to.size && !from.size) warnings.push(`${name} sets ${field} to ${[...to].join(", ")} without checking the ${field} first; not drawn`);
-    for (const f of from) for (const t of to) addEdge(f, t, name);
+    walk(body, new Set());
+    // why: a check outside an if condition (a ternary, a loop) can't be tied to one branch, so it pairs with every unchecked assignment as before.
+    for (const f of loose) for (const t of unpaired) addEdge(f, t, name);
+    if (unpaired.size && !loose.size) {
+      warnings.push(`${name} sets ${field} to ${[...unpaired].join(", ")} without checking the ${field} first; not drawn`);
+    }
   };
 
   function collectTo(node, add, shallow = false) {

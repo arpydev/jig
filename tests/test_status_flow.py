@@ -161,6 +161,30 @@ class ExtractTest(FixtureRepo):
         self.assertEqual(json.loads(r.stdout)["edges"], [])
         self.assertIn("archive sets status to archived without checking the status first", r.stderr)
 
+    def test_a_guard_that_exits_on_a_state_draws_nothing_from_that_state(self):
+        self.add("order.ts", "\n".join([
+            'export type OrderState = "Placed" | "Cancelled" | "Shipped";',
+            "export function ship(order: { status: OrderState }) {",
+            '  if (order.status === "Cancelled") throw new Error("cancelled");',
+            '  if (order.status !== "Placed") return;',
+            '  order.status = "Shipped";',
+            "}",
+        ]))
+        self.assertEqual(self.graph("order.ts", "OrderState")["edges"],
+                         [{"from": "Placed", "to": "Shipped", "label": "ship"}])
+
+    def test_each_branch_pairs_its_own_check_with_its_own_assignment(self):
+        self.add("document.ts", "\n".join([
+            'export type DocState = "Draft" | "Review" | "Published";',
+            "export function advance(doc: { status: DocState }) {",
+            '  if (doc.status === "Draft") doc.status = "Review";',
+            '  else if (doc.status === "Review") doc.status = "Published";',
+            "}",
+        ]))
+        self.assertEqual(self.graph("document.ts", "DocState")["edges"],
+                         [{"from": "Draft", "to": "Review", "label": "advance"},
+                          {"from": "Review", "to": "Published", "label": "advance"}])
+
     def test_another_field_name_is_followed_with_field(self):
         self.add("document.ts", "\n".join([
             'export type DocState = "draft" | "review";',
